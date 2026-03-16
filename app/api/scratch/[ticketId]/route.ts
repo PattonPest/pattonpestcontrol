@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import prizesConfig from "@/config/prizes.json";
 
 export async function GET(
   _req: Request,
@@ -15,7 +14,10 @@ export async function GET(
     return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
   }
 
-  const prize = prizesConfig.prizes.find((p) => p.label === ticket.outcome);
+  // Look up the current description from the Prize table (admin may have edited it)
+  const prize = await prisma.prize.findFirst({
+    where: { label: ticket.outcome },
+  });
 
   return NextResponse.json({
     ticketId: ticket.id,

@@ -14,9 +14,11 @@ export async function GET(req: NextRequest) {
     by: ["outcome"],
     _count: { outcome: true },
   });
+  const uniqueContacts = await prisma.ticket.groupBy({ by: ["contact"] });
 
   return NextResponse.json({
     totalTickets: total,
+    uniquePlayers: uniqueContacts.length,
     byPrize: byOutcome.map((r) => ({
       prize: r.outcome,
       count: r._count.outcome,

@@ -14,54 +14,89 @@ export default function ScratchPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ticket, setTicket] = useState<TicketResult | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
+  const [contactInput, setContactInput] = useState("");
+  const [contactSubmitted, setContactSubmitted] = useState(false);
   const isScratching = useRef(false);
   const hasAutoRevealed = useRef(false);
 
-  const todayKey = () => new Date().toISOString().split("T")[0];
+  /** Returns "YYYY-MM" for the current calendar month. */
+  const monthKey = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
 
-  async function issueTicket(today: string) {
-    const res = await fetch("/api/scratch", { method: "POST" });
-    if (!res.ok) throw new Error("Failed to issue ticket");
-    const data: TicketResult = await res.json();
-    setTicket(data);
-    localStorage.setItem("scratch_date", today);
-    localStorage.setItem("scratch_id", data.ticketId);
+  async function issueTicket(contact: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/scratch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact }),
+      });
+
+      if (res.status === 409) {
+        // Already played this month — server returns the existing ticket
+        const data = await res.json();
+        setTicket({ ticketId: data.ticketId, outcome: data.outcome, description: "" });
+        // Fetch full description
+        const full = await fetch(`/api/scratch/${data.ticketId}`);
+        if (full.ok) setTicket(await full.json());
+        setAlreadyPlayed(true);
+        setRevealed(true);
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Failed to issue ticket");
+      }
+
+      const data: TicketResult = await res.json();
+      setTicket(data);
+      // Persist to localStorage so refresh doesn't re-issue
+      localStorage.setItem("scratch_month", monthKey());
+      localStorage.setItem("scratch_id", data.ticketId);
+      localStorage.setItem("scratch_contact", contact.trim().toLowerCase());
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e));
+    } finally {
+      setLoading(false);
+    }
   }
 
+  // On mount: check if the user already played this month (localStorage fast-path)
   useEffect(() => {
-    async function init() {
-      try {
-        const savedDate = localStorage.getItem("scratch_date");
-        const savedId = localStorage.getItem("scratch_id");
-        const today = todayKey();
+    const savedMonth = localStorage.getItem("scratch_month");
+    const savedId = localStorage.getItem("scratch_id");
 
-        if (savedDate === today && savedId) {
-          const res = await fetch(`/api/scratch/${savedId}`);
-          if (res.ok) {
-            const data = await res.json();
-            setTicket(data);
+    if (savedMonth === monthKey() && savedId) {
+      // Show a simple already-played message without contacting the server yet.
+      // We'll load the ticket when they submit their contact info.
+      setContactSubmitted(true);
+      setLoading(true);
+      fetch(`/api/scratch/${savedId}`)
+        .then(async (r) => {
+          if (r.ok) {
+            setTicket(await r.json());
             setAlreadyPlayed(true);
             setRevealed(true);
-          } else {
-            localStorage.removeItem("scratch_date");
-            localStorage.removeItem("scratch_id");
-            await issueTicket(today);
           }
-        } else {
-          await issueTicket(today);
-        }
-      } catch {
-        setError("Something went wrong. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+        })
+        .finally(() => setLoading(false));
     }
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handleContactSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!contactInput.trim()) return;
+    setContactSubmitted(true);
+    await issueTicket(contactInput.trim());
+  }
 
   // Draw scratch overlay on canvas
   useEffect(() => {
@@ -180,6 +215,39 @@ export default function ScratchPage() {
     };
   }, [ticket, alreadyPlayed, revealed, scratch]);
 
+  const isWinner = ticket?.outcome !== "No prize";
+
+  // ── Contact form (shown before issuing ticket) ───────────────────────────
+  if (!contactSubmitted) {
+    return (
+      <main style={styles.main}>
+        <div style={styles.card}>
+          <h1 style={styles.title}>🎟 Patton Pest Control</h1>
+          <h2 style={styles.subtitle}>Monthly Scratch-Off Ticket</h2>
+          <p style={{ color: "#555", fontSize: 14, marginBottom: 20 }}>
+            Enter your phone number or email to get your free scratch-off ticket.
+            One ticket per person per month.
+          </p>
+          <form onSubmit={handleContactSubmit} style={{ width: "100%" }}>
+            <input
+              type="text"
+              placeholder="Phone number or email address"
+              value={contactInput}
+              onChange={(e) => setContactInput(e.target.value)}
+              style={styles.input}
+              required
+              autoFocus
+            />
+            <button type="submit" style={styles.btnPlay}>
+              Get My Ticket →
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
+
+  // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <main style={styles.main}>
@@ -190,88 +258,105 @@ export default function ScratchPage() {
     );
   }
 
+  // ── Error ────────────────────────────────────────────────────────────────
   if (error) {
     return (
       <main style={styles.main}>
         <div style={styles.card}>
-          <p style={{ color: "#c0392b", fontSize: 16 }}>{error}</p>
+          <p style={{ color: "#c0392b", fontSize: 16, marginBottom: 16 }}>
+            {error}
+          </p>
+          <button
+            style={styles.btnPlay}
+            onClick={() => {
+              setContactSubmitted(false);
+              setError(null);
+            }}
+          >
+            Try again
+          </button>
         </div>
       </main>
     );
   }
 
-  const isWinner = ticket?.outcome !== "No prize";
+  // ── Already played this month ────────────────────────────────────────────
+  if (alreadyPlayed) {
+    return (
+      <main style={styles.main}>
+        <div style={styles.card}>
+          <h1 style={styles.title}>🎟 Patton Pest Control</h1>
+          <h2 style={styles.subtitle}>Monthly Scratch-Off Ticket</h2>
+          <p style={{ marginBottom: 16, color: "#888", fontSize: 14 }}>
+            You already played this month. Come back next month for another
+            chance!
+          </p>
+          <div style={isWinner ? styles.prizeBoxWinner : styles.prizeBoxLoser}>
+            <div style={styles.prizeLabel}>{ticket?.outcome}</div>
+            <div style={styles.prizeDesc}>{ticket?.description}</div>
+            {isWinner && (
+              <p style={styles.callToAction}>
+                Call us at <strong>(555) 123-4567</strong> to redeem!
+              </p>
+            )}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
+  // ── Scratch card ─────────────────────────────────────────────────────────
   return (
     <main style={styles.main}>
       <div style={styles.card}>
         <h1 style={styles.title}>🎟 Patton Pest Control</h1>
-        <h2 style={styles.subtitle}>Daily Scratch-Off Ticket</h2>
+        <h2 style={styles.subtitle}>Monthly Scratch-Off Ticket</h2>
 
-        {alreadyPlayed ? (
-          <div style={styles.section}>
-            <p style={{ marginBottom: 16, color: "#888", fontSize: 14 }}>
-              You already played today. Come back tomorrow!
-            </p>
-            <div style={isWinner ? styles.prizeBoxWinner : styles.prizeBoxLoser}>
-              <div style={styles.prizeLabel}>{ticket?.outcome}</div>
-              <div style={styles.prizeDesc}>{ticket?.description}</div>
-              {isWinner && (
-                <p style={styles.callToAction}>
-                  Call us at <strong>(555) 123-4567</strong> to redeem!
-                </p>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div style={styles.section}>
-            {!revealed && (
-              <p style={{ marginBottom: 12, color: "#666", fontSize: 14 }}>
-                Scratch the card below to reveal your prize!
-              </p>
-            )}
+        {!revealed && (
+          <p style={{ marginBottom: 12, color: "#666", fontSize: 14 }}>
+            Scratch the card below to reveal your prize!
+          </p>
+        )}
 
-            <div style={styles.scratchWrapper}>
-              {/* Prize displayed behind canvas */}
-              <div style={styles.prizeRevealArea}>
-                {revealed ? (
-                  <div
-                    style={isWinner ? styles.prizeBoxWinner : styles.prizeBoxLoser}
-                  >
-                    <div style={styles.prizeLabel}>{ticket?.outcome}</div>
-                    <div style={styles.prizeDesc}>{ticket?.description}</div>
-                    {isWinner && (
-                      <p style={styles.callToAction}>
-                        Call us at <strong>(555) 123-4567</strong> to redeem!
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div style={styles.hiddenBg}>
-                    <span style={{ color: "#bbb", fontSize: 13 }}>
-                      Scratch to reveal…
-                    </span>
-                  </div>
+        <div style={styles.scratchWrapper}>
+          {/* Prize displayed behind canvas */}
+          <div style={styles.prizeRevealArea}>
+            {revealed ? (
+              <div
+                style={isWinner ? styles.prizeBoxWinner : styles.prizeBoxLoser}
+              >
+                <div style={styles.prizeLabel}>{ticket?.outcome}</div>
+                <div style={styles.prizeDesc}>{ticket?.description}</div>
+                {isWinner && (
+                  <p style={styles.callToAction}>
+                    Call us at <strong>(555) 123-4567</strong> to redeem!
+                  </p>
                 )}
               </div>
-
-              {/* Canvas overlay — only shown when not yet revealed */}
-              {!revealed && (
-                <canvas
-                  ref={canvasRef}
-                  width={340}
-                  height={160}
-                  style={styles.canvas}
-                />
-              )}
-            </div>
-
-            {revealed && (
-              <p style={{ color: "#999", marginTop: 14, fontSize: 13 }}>
-                Come back tomorrow for another chance!
-              </p>
+            ) : (
+              <div style={styles.hiddenBg}>
+                <span style={{ color: "#bbb", fontSize: 13 }}>
+                  Scratch to reveal…
+                </span>
+              </div>
             )}
           </div>
+
+          {/* Canvas overlay — only shown when not yet revealed */}
+          {!revealed && (
+            <canvas
+              ref={canvasRef}
+              width={340}
+              height={160}
+              style={styles.canvas}
+            />
+          )}
+        </div>
+
+        {revealed && (
+          <p style={{ color: "#999", marginTop: 14, fontSize: 13 }}>
+            Come back next month for another chance!
+          </p>
         )}
       </div>
     </main>
@@ -309,8 +394,26 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 20,
     fontWeight: 500,
   },
-  section: {
+  input: {
     width: "100%",
+    padding: "10px 14px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    fontSize: 15,
+    marginBottom: 12,
+    boxSizing: "border-box" as const,
+    outline: "none",
+  },
+  btnPlay: {
+    width: "100%",
+    background: "#1a472a",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: "12px 0",
+    fontSize: 16,
+    fontWeight: 700,
+    cursor: "pointer",
   },
   scratchWrapper: {
     position: "relative",
@@ -348,14 +451,14 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     padding: "20px 24px",
     width: "100%",
-    boxSizing: "border-box",
+    boxSizing: "border-box" as const,
   },
   prizeBoxLoser: {
     background: "#f0f0f0",
     borderRadius: 12,
     padding: "20px 24px",
     width: "100%",
-    boxSizing: "border-box",
+    boxSizing: "border-box" as const,
   },
   prizeLabel: {
     fontSize: 28,

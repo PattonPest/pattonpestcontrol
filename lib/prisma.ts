@@ -9,3 +9,9 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+// Enable WAL journal mode so multiple concurrent readers/writers don't block
+// each other — supports 3+ simultaneous users with no contention.
+if (!globalForPrisma.prisma) {
+  void prisma.$executeRawUnsafe("PRAGMA journal_mode=WAL;");
+}

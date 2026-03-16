@@ -10,7 +10,19 @@ datasource db {
 model Ticket {
   id        String   @id @default(cuid())
   outcome   String
+  contact   String   // normalized email or phone (lowercase/stripped)
   createdAt DateTime @default(now())
   revealed  Boolean  @default(false)
   ipHash    String?
+}
+
+model Prize {
+  id          String   @id @default(cuid())
+  label       String
+  description String
+  weight      Int
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
