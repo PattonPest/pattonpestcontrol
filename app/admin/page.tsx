@@ -11,8 +11,20 @@ interface Prize {
   sortOrder: number;
 }
 
+interface ThemeOption {
+  id: string;
+  name: string;
+  emoji: string;
+  tagline: string;
+  pageBackground: string;
+  cardBackground: string;
+  titleColor: string;
+  buttonBackground: string;
+}
+
 interface Stats {
   totalTickets: number;
+  uniquePlayers: number;
   byPrize: { prize: string; count: number }[];
 }
 
@@ -34,6 +46,13 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
+  // Theme state
+  const [themes, setThemes] = useState<ThemeOption[]>([]);
+  const [activeTheme, setActiveTheme] = useState("auto");
+  const [autoDetected, setAutoDetected] = useState("default");
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [themeMsg, setThemeMsg] = useState("");
+
   // Editing state — null means "add new"
   const [editId, setEditId] = useState<string | null | "new">(null);
   const [form, setForm] = useState(BLANK_FORM);
@@ -51,11 +70,14 @@ export default function AdminPage() {
     async (t: string) => {
       setLoadError("");
       try {
-        const [prRes, stRes] = await Promise.all([
+        const [prRes, stRes, thRes] = await Promise.all([
           fetch("/api/admin/prizes", {
             headers: { "x-admin-token": t },
           }),
           fetch(`/api/admin/stats?token=${encodeURIComponent(t)}`),
+          fetch("/api/admin/theme", {
+            headers: { "x-admin-token": t },
+          }),
         ]);
         if (prRes.status === 401) {
           setAuthed(false);
@@ -66,6 +88,12 @@ export default function AdminPage() {
         if (!prRes.ok) throw new Error("Failed to load prizes");
         setPrizes(await prRes.json());
         if (stRes.ok) setStats(await stRes.json());
+        if (thRes.ok) {
+          const thData = await thRes.json();
+          setThemes(thData.themes ?? []);
+          setActiveTheme(thData.activeTheme ?? "auto");
+          setAutoDetected(thData.autoDetected ?? "default");
+        }
       } catch (e) {
         setLoadError(String(e));
       }
@@ -90,6 +118,18 @@ export default function AdminPage() {
     }
     sessionStorage.setItem("admin_token", token);
     setAuthed(true);
+  }
+
+  async function handleSaveTheme() {
+    setThemeSaving(true);
+    setThemeMsg("");
+    const res = await fetch("/api/admin/theme", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ themeId: activeTheme }),
+    });
+    setThemeSaving(false);
+    setThemeMsg(res.ok ? "✅ Theme saved!" : "❌ Failed to save theme.");
   }
 
   function startEdit(prize: Prize) {
@@ -235,7 +275,10 @@ export default function AdminPage() {
         {stats && (
           <div style={s.statsBanner}>
             <span>
-              <strong>{stats.totalTickets}</strong> total tickets issued
+              <strong>{stats.totalTickets}</strong> total tickets
+            </span>
+            <span>
+              <strong>{stats.uniquePlayers}</strong> unique players
             </span>
             {stats.byPrize.map((b) => (
               <span key={b.prize}>
@@ -383,6 +426,91 @@ export default function AdminPage() {
             </div>
           </form>
         )}
+
+        {/* ── Theme Settings ────────────────────────────────────────────── */}
+        <h2 style={{ ...s.h2, marginTop: 36 }}>🎨 Theme Settings</h2>
+        <p style={s.muted}>
+          Choose the ticket theme. <strong>Auto</strong> selects the best theme
+          for today&apos;s date (season / holiday). You can override it any time.
+        </p>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 14 }}>
+          {/* Auto option */}
+          <button
+            type="button"
+            onClick={() => setActiveTheme("auto")}
+            style={{
+              ...s.themeCard,
+              background: activeTheme === "auto" ? "#1a472a" : "#f4f6f8",
+              color: activeTheme === "auto" ? "#fff" : "#333",
+              border: activeTheme === "auto" ? "2px solid #1a472a" : "2px solid #ddd",
+            }}
+          >
+            <div style={{ fontSize: 22 }}>🗓️</div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>Auto</div>
+            <div style={{ fontSize: 11, opacity: 0.8 }}>
+              Today: {themes.find((t) => t.id === autoDetected)?.name ?? autoDetected}
+            </div>
+          </button>
+
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTheme(t.id)}
+              style={{
+                ...s.themeCard,
+                background: t.cardBackground,
+                border:
+                  activeTheme === t.id
+                    ? `3px solid ${t.titleColor}`
+                    : "2px solid #ddd",
+                boxShadow:
+                  activeTheme === t.id
+                    ? `0 0 0 2px ${t.titleColor}40`
+                    : "none",
+              }}
+            >
+              <div
+                style={{
+                  borderRadius: 6,
+                  background: t.pageBackground,
+                  height: 28,
+                  width: "100%",
+                  marginBottom: 6,
+                }}
+              />
+              <div style={{ fontSize: 20 }}>{t.emoji}</div>
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 12,
+                  color: t.titleColor,
+                  lineHeight: 1.3,
+                }}
+              >
+                {t.name}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+          <button
+            style={s.btnPrimary}
+            onClick={handleSaveTheme}
+            disabled={themeSaving}
+          >
+            {themeSaving ? "Saving…" : "Save Theme"}
+          </button>
+          {themeMsg && (
+            <span
+              style={themeMsg.startsWith("✅") ? s.success : s.error}
+            >
+              {themeMsg}
+            </span>
+          )}
+        </div>
       </div>
     </main>
   );
@@ -520,5 +648,14 @@ const s: Record<string, React.CSSProperties> = {
     padding: "4px 8px",
     fontSize: 12,
     cursor: "pointer",
+  },
+  themeCard: {
+    borderRadius: 10,
+    padding: "10px 10px 8px",
+    width: 110,
+    cursor: "pointer",
+    textAlign: "center" as const,
+    fontSize: 13,
+    transition: "box-shadow 0.15s",
   },
 };

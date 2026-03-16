@@ -10,10 +10,12 @@ datasource db {
 model Ticket {
   id        String   @id @default(cuid())
   outcome   String
-  contact   String   // normalized email or phone (lowercase/stripped)
+  contact   String   // normalized: trimmed, lowercased; phone digits-only if no '@'
   createdAt DateTime @default(now())
   revealed  Boolean  @default(false)
   ipHash    String?
+
+  @@index([contact])
 }
 
 model Prize {
@@ -25,4 +27,9 @@ model Prize {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Setting {
+  key   String @id
+  value String
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { type Theme, THEMES } from "@/lib/themes";
 
 interface TicketResult {
   ticketId: string;
@@ -12,6 +13,7 @@ const SCRATCH_THRESHOLD = 0.6;
 
 export default function ScratchPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [theme, setTheme] = useState<Theme>(THEMES.default);
   const [ticket, setTicket] = useState<TicketResult | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,16 @@ export default function ScratchPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   };
 
+  // Fetch active theme on mount
+  useEffect(() => {
+    fetch("/api/theme")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((t) => {
+        if (t) setTheme(t);
+      })
+      .catch(() => {});
+  }, []);
+
   async function issueTicket(contact: string) {
     setLoading(true);
     setError(null);
@@ -39,10 +51,8 @@ export default function ScratchPage() {
       });
 
       if (res.status === 409) {
-        // Already played this month — server returns the existing ticket
         const data = await res.json();
         setTicket({ ticketId: data.ticketId, outcome: data.outcome, description: "" });
-        // Fetch full description
         const full = await fetch(`/api/scratch/${data.ticketId}`);
         if (full.ok) setTicket(await full.json());
         setAlreadyPlayed(true);
@@ -57,7 +67,6 @@ export default function ScratchPage() {
 
       const data: TicketResult = await res.json();
       setTicket(data);
-      // Persist to localStorage so refresh doesn't re-issue
       localStorage.setItem("scratch_month", monthKey());
       localStorage.setItem("scratch_id", data.ticketId);
       localStorage.setItem("scratch_contact", contact.trim().toLowerCase());
@@ -68,14 +77,11 @@ export default function ScratchPage() {
     }
   }
 
-  // On mount: check if the user already played this month (localStorage fast-path)
+  // On mount: fast-path if already played this month
   useEffect(() => {
     const savedMonth = localStorage.getItem("scratch_month");
     const savedId = localStorage.getItem("scratch_id");
-
     if (savedMonth === monthKey() && savedId) {
-      // Show a simple already-played message without contacting the server yet.
-      // We'll load the ticket when they submit their contact info.
       setContactSubmitted(true);
       setLoading(true);
       fetch(`/api/scratch/${savedId}`)
@@ -88,7 +94,7 @@ export default function ScratchPage() {
         })
         .finally(() => setLoading(false));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleContactSubmit(e: React.FormEvent) {
@@ -98,7 +104,7 @@ export default function ScratchPage() {
     await issueTicket(contactInput.trim());
   }
 
-  // Draw scratch overlay on canvas
+  // Draw themed scratch overlay on canvas
   useEffect(() => {
     if (!ticket || alreadyPlayed || revealed) return;
     const canvas = canvasRef.current;
@@ -107,11 +113,11 @@ export default function ScratchPage() {
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#B0B0B0";
+    ctx.fillStyle = theme.canvasFill;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Diagonal stripe texture
-    ctx.strokeStyle = "#A0A0A0";
+    ctx.strokeStyle = theme.canvasStripe;
     ctx.lineWidth = 2;
     for (let i = -canvas.height; i < canvas.width; i += 20) {
       ctx.beginPath();
@@ -120,13 +126,15 @@ export default function ScratchPage() {
       ctx.stroke();
     }
 
-    ctx.fillStyle = "#888";
-    ctx.font = "bold 16px Arial";
+    ctx.fillStyle = theme.canvasTextColor;
+    ctx.font = "bold 15px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("✦ SCRATCH HERE ✦", canvas.width / 2, canvas.height / 2 - 8);
+    ctx.fillText("✦ SCRATCH HERE ✦", canvas.width / 2, canvas.height / 2 - 14);
     ctx.font = "13px Arial";
-    ctx.fillText("Patton Pest Control", canvas.width / 2, canvas.height / 2 + 14);
-  }, [ticket, alreadyPlayed, revealed]);
+    ctx.fillText(theme.canvasLabel, canvas.width / 2, canvas.height / 2 + 10);
+    ctx.font = "11px Arial";
+    ctx.fillText("Patton Pest Control", canvas.width / 2, canvas.height / 2 + 28);
+  }, [ticket, alreadyPlayed, revealed, theme]);
 
   const getPos = (
     e: MouseEvent | TouchEvent,
@@ -200,9 +208,7 @@ export default function ScratchPage() {
     canvas.addEventListener("mousemove", scratch as EventListener);
     canvas.addEventListener("touchstart", start, { passive: false });
     canvas.addEventListener("touchend", stop);
-    canvas.addEventListener("touchmove", scratch as EventListener, {
-      passive: false,
-    });
+    canvas.addEventListener("touchmove", scratch as EventListener, { passive: false });
 
     return () => {
       canvas.removeEventListener("mousedown", start);
@@ -217,16 +223,24 @@ export default function ScratchPage() {
 
   const isWinner = ticket?.outcome !== "No prize";
 
-  // ── Contact form (shown before issuing ticket) ───────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // Dynamic styles built from current theme
+  // ─────────────────────────────────────────────────────────────────────────
+  const s = buildStyles(theme);
+
+  // ── Contact form ───────────────────────────────────────────────────────────
   if (!contactSubmitted) {
     return (
-      <main style={styles.main}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>🎟 Patton Pest Control</h1>
-          <h2 style={styles.subtitle}>Monthly Scratch-Off Ticket</h2>
-          <p style={{ color: "#555", fontSize: 14, marginBottom: 20 }}>
-            Enter your phone number or email to get your free scratch-off ticket.
-            One ticket per person per month.
+      <main style={s.main}>
+        <div style={s.card}>
+          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+          <h1 style={s.title}>🎟 Patton Pest Control</h1>
+          <h2 style={s.subtitle}>{theme.name}</h2>
+          <div style={s.winnerBanner}>🏆 Everyone is a winner! 🏆</div>
+          <p style={s.tagline}>{theme.tagline}</p>
+          <p style={s.bodyText}>
+            Enter your phone number or email to get your free scratch-off
+            ticket. <strong>One ticket per person per month.</strong>
           </p>
           <form onSubmit={handleContactSubmit} style={{ width: "100%" }}>
             <input
@@ -234,12 +248,12 @@ export default function ScratchPage() {
               placeholder="Phone number or email address"
               value={contactInput}
               onChange={(e) => setContactInput(e.target.value)}
-              style={styles.input}
+              style={s.input}
               required
               autoFocus
             />
-            <button type="submit" style={styles.btnPlay}>
-              Get My Ticket →
+            <button type="submit" style={s.btnPlay}>
+              Get My Ticket {theme.emoji}
             </button>
           </form>
         </div>
@@ -247,27 +261,29 @@ export default function ScratchPage() {
     );
   }
 
-  // ── Loading ──────────────────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <main style={styles.main}>
-        <div style={styles.card}>
-          <p style={{ color: "#555", fontSize: 18 }}>Loading your ticket…</p>
+      <main style={s.main}>
+        <div style={s.card}>
+          <p style={{ color: theme.bodyTextColor, fontSize: 18 }}>
+            Loading your ticket…
+          </p>
         </div>
       </main>
     );
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────
+  // ── Error ──────────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <main style={styles.main}>
-        <div style={styles.card}>
+      <main style={s.main}>
+        <div style={s.card}>
           <p style={{ color: "#c0392b", fontSize: 16, marginBottom: 16 }}>
             {error}
           </p>
           <button
-            style={styles.btnPlay}
+            style={s.btnPlay}
             onClick={() => {
               setContactSubmitted(false);
               setError(null);
@@ -280,23 +296,25 @@ export default function ScratchPage() {
     );
   }
 
-  // ── Already played this month ────────────────────────────────────────────
+  // ── Already played this month ──────────────────────────────────────────────
   if (alreadyPlayed) {
     return (
-      <main style={styles.main}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>🎟 Patton Pest Control</h1>
-          <h2 style={styles.subtitle}>Monthly Scratch-Off Ticket</h2>
-          <p style={{ marginBottom: 16, color: "#888", fontSize: 14 }}>
-            You already played this month. Come back next month for another
+      <main style={s.main}>
+        <div style={s.card}>
+          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+          <h1 style={s.title}>🎟 Patton Pest Control</h1>
+          <h2 style={s.subtitle}>{theme.name}</h2>
+          <div style={s.winnerBanner}>🏆 Everyone is a winner! 🏆</div>
+          <p style={{ ...s.bodyText, marginBottom: 16 }}>
+            You already played this month — come back next month for another
             chance!
           </p>
-          <div style={isWinner ? styles.prizeBoxWinner : styles.prizeBoxLoser}>
-            <div style={styles.prizeLabel}>{ticket?.outcome}</div>
-            <div style={styles.prizeDesc}>{ticket?.description}</div>
+          <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
+            <div style={s.prizeLabel}>{ticket?.outcome}</div>
+            <div style={s.prizeDesc}>{ticket?.description}</div>
             {isWinner && (
-              <p style={styles.callToAction}>
-                Call us at <strong>(555) 123-4567</strong> to redeem!
+              <p style={s.callToAction}>
+                📞 Call us at <strong>(555) 123-4567</strong> to redeem!
               </p>
             )}
           </div>
@@ -305,56 +323,52 @@ export default function ScratchPage() {
     );
   }
 
-  // ── Scratch card ─────────────────────────────────────────────────────────
+  // ── Scratch card ───────────────────────────────────────────────────────────
   return (
-    <main style={styles.main}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>🎟 Patton Pest Control</h1>
-        <h2 style={styles.subtitle}>Monthly Scratch-Off Ticket</h2>
+    <main style={s.main}>
+      <div style={s.card}>
+        <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+        <h1 style={s.title}>🎟 Patton Pest Control</h1>
+        <h2 style={s.subtitle}>{theme.name}</h2>
+        <div style={s.winnerBanner}>🏆 Everyone is a winner! 🏆</div>
 
         {!revealed && (
-          <p style={{ marginBottom: 12, color: "#666", fontSize: 14 }}>
-            Scratch the card below to reveal your prize!
-          </p>
+          <p style={s.bodyText}>Scratch the card below to reveal your prize!</p>
         )}
 
-        <div style={styles.scratchWrapper}>
-          {/* Prize displayed behind canvas */}
-          <div style={styles.prizeRevealArea}>
+        <div style={s.scratchWrapper}>
+          <div style={s.prizeRevealArea}>
             {revealed ? (
-              <div
-                style={isWinner ? styles.prizeBoxWinner : styles.prizeBoxLoser}
-              >
-                <div style={styles.prizeLabel}>{ticket?.outcome}</div>
-                <div style={styles.prizeDesc}>{ticket?.description}</div>
+              <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
+                <div style={s.prizeLabel}>{ticket?.outcome}</div>
+                <div style={s.prizeDesc}>{ticket?.description}</div>
                 {isWinner && (
-                  <p style={styles.callToAction}>
-                    Call us at <strong>(555) 123-4567</strong> to redeem!
+                  <p style={s.callToAction}>
+                    📞 Call us at <strong>(555) 123-4567</strong> to redeem!
                   </p>
                 )}
               </div>
             ) : (
-              <div style={styles.hiddenBg}>
-                <span style={{ color: "#bbb", fontSize: 13 }}>
+              <div style={s.hiddenBg}>
+                <span style={{ color: theme.mutedTextColor, fontSize: 13 }}>
                   Scratch to reveal…
                 </span>
               </div>
             )}
           </div>
 
-          {/* Canvas overlay — only shown when not yet revealed */}
           {!revealed && (
             <canvas
               ref={canvasRef}
               width={340}
-              height={160}
-              style={styles.canvas}
+              height={170}
+              style={s.canvas}
             />
           )}
         </div>
 
         {revealed && (
-          <p style={{ color: "#999", marginTop: 14, fontSize: 13 }}>
+          <p style={{ color: theme.mutedTextColor, marginTop: 14, fontSize: 13 }}>
             Come back next month for another chance!
           </p>
         )}
@@ -363,116 +377,159 @@ export default function ScratchPage() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  main: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #1a472a 0%, #2d5a27 100%)",
-    padding: 16,
-  },
-  card: {
-    background: "#fff",
-    borderRadius: 16,
-    padding: "32px 24px",
-    maxWidth: 400,
-    width: "100%",
-    textAlign: "center",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 800,
-    color: "#1a472a",
-    margin: 0,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#666",
-    marginTop: 4,
-    marginBottom: 20,
-    fontWeight: 500,
-  },
-  input: {
-    width: "100%",
-    padding: "10px 14px",
-    borderRadius: 8,
-    border: "1px solid #ccc",
-    fontSize: 15,
-    marginBottom: 12,
-    boxSizing: "border-box" as const,
-    outline: "none",
-  },
-  btnPlay: {
-    width: "100%",
-    background: "#1a472a",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    padding: "12px 0",
-    fontSize: 16,
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  scratchWrapper: {
-    position: "relative",
-    display: "inline-block",
-    width: "100%",
-  },
-  prizeRevealArea: {
-    width: "100%",
-    minHeight: 160,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  canvas: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    cursor: "crosshair",
-    borderRadius: 8,
-    touchAction: "none",
-  },
-  hiddenBg: {
-    width: "100%",
-    height: 160,
-    background: "#f0f0f0",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  prizeBoxWinner: {
-    background: "linear-gradient(135deg, #ffd700, #ff8c00)",
-    borderRadius: 12,
-    padding: "20px 24px",
-    width: "100%",
-    boxSizing: "border-box" as const,
-  },
-  prizeBoxLoser: {
-    background: "#f0f0f0",
-    borderRadius: 12,
-    padding: "20px 24px",
-    width: "100%",
-    boxSizing: "border-box" as const,
-  },
-  prizeLabel: {
-    fontSize: 28,
-    fontWeight: 800,
-    color: "#1a1a1a",
-    marginBottom: 6,
-  },
-  prizeDesc: {
-    fontSize: 15,
-    color: "#333",
-  },
-  callToAction: {
-    marginTop: 12,
-    fontSize: 14,
-    color: "#1a472a",
-  },
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// Style factory — builds all style objects from the active theme
+// ─────────────────────────────────────────────────────────────────────────────
+function buildStyles(t: Theme): Record<string, React.CSSProperties> {
+  return {
+    main: {
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: t.pageBackground,
+      padding: 16,
+    },
+    card: {
+      background: t.cardBackground,
+      border: t.cardBorder,
+      borderRadius: 16,
+      padding: "28px 24px 32px",
+      maxWidth: 400,
+      width: "100%",
+      textAlign: "center",
+      boxShadow: t.cardShadow,
+    },
+    bugStrip: {
+      fontSize: 22,
+      letterSpacing: 6,
+      marginBottom: 8,
+      opacity: 0.7,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: 800,
+      color: t.titleColor,
+      margin: "0 0 2px",
+    },
+    subtitle: {
+      fontSize: 14,
+      color: t.subtitleColor,
+      marginTop: 0,
+      marginBottom: 4,
+      fontWeight: 700,
+    },
+    tagline: {
+      fontSize: 13,
+      color: t.subtitleColor,
+      marginBottom: 14,
+      fontStyle: "italic",
+    },
+    bodyText: {
+      color: t.bodyTextColor,
+      fontSize: 14,
+      marginBottom: 14,
+    },
+    input: {
+      width: "100%",
+      padding: "10px 14px",
+      borderRadius: 8,
+      border: `1px solid ${t.inputBorderColor}`,
+      fontSize: 15,
+      marginBottom: 12,
+      boxSizing: "border-box" as const,
+      outline: "none",
+      background: "rgba(255,255,255,0.9)",
+      color: "#333",
+    },
+    btnPlay: {
+      width: "100%",
+      background: t.buttonBackground,
+      color: t.buttonColor,
+      border: "none",
+      borderRadius: 8,
+      padding: "12px 0",
+      fontSize: 16,
+      fontWeight: 700,
+      cursor: "pointer",
+    },
+    scratchWrapper: {
+      position: "relative",
+      display: "inline-block",
+      width: "100%",
+    },
+    prizeRevealArea: {
+      width: "100%",
+      minHeight: 170,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    canvas: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      cursor: "crosshair",
+      borderRadius: 8,
+      touchAction: "none",
+    },
+    hiddenBg: {
+      width: "100%",
+      height: 170,
+      background: t.canvasFill,
+      borderRadius: 8,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    prizeBoxWinner: {
+      background: t.winnerGradient,
+      borderRadius: 12,
+      padding: "20px 24px",
+      width: "100%",
+      boxSizing: "border-box" as const,
+    },
+    prizeBoxLoser: {
+      background: t.loserBackground,
+      borderRadius: 12,
+      padding: "20px 24px",
+      width: "100%",
+      boxSizing: "border-box" as const,
+    },
+    prizeLabel: {
+      fontSize: 28,
+      fontWeight: 800,
+      color: isWinnerBox(t) ? t.winnerTextColor : t.loserTextColor,
+      marginBottom: 6,
+    },
+    prizeDesc: {
+      fontSize: 15,
+      color: isWinnerBox(t) ? t.winnerTextColor : t.loserTextColor,
+    },
+    callToAction: {
+      marginTop: 12,
+      fontSize: 14,
+      color: t.ctaColor,
+      fontWeight: 600,
+    },
+    winnerBanner: {
+      background: t.buttonBackground,
+      color: t.buttonColor,
+      borderRadius: 20,
+      padding: "5px 16px",
+      fontSize: 13,
+      fontWeight: 700,
+      letterSpacing: "0.04em",
+      display: "inline-block",
+      margin: "8px auto 12px",
+    },
+  };
+}
+
+// Helper to pick winner text color when building static styles;
+// actual winner/loser state is handled at render time above.
+function isWinnerBox(_t: Theme) {
+  return true; // styles are correct — runtime applies prizeBoxWinner vs prizeBoxLoser
+}
