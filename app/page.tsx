@@ -36,7 +36,7 @@ export default function HomePage() {
         </h1>
         <p style={{ color: "#555", marginBottom: 28, lineHeight: 1.6 }}>
           Try your luck with our virtual scratch-off ticket! One free play per
-          day. Win discounts on pest control services.
+          month. Win discounts on pest control services.
         </p>
         <Link
           href="/scratch"

@@ -501,12 +501,12 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
     prizeLabel: {
       fontSize: 28,
       fontWeight: 800,
-      color: isWinnerBox(t) ? t.winnerTextColor : t.loserTextColor,
+      color: t.winnerTextColor,
       marginBottom: 6,
     },
     prizeDesc: {
       fontSize: 15,
-      color: isWinnerBox(t) ? t.winnerTextColor : t.loserTextColor,
+      color: t.winnerTextColor,
     },
     callToAction: {
       marginTop: 12,
@@ -526,10 +526,4 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       margin: "8px auto 12px",
     },
   };
-}
-
-// Helper to pick winner text color when building static styles;
-// actual winner/loser state is handled at render time above.
-function isWinnerBox(_t: Theme) {
-  return true; // styles are correct — runtime applies prizeBoxWinner vs prizeBoxLoser
 }
