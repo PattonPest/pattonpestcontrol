@@ -27,7 +27,7 @@ export async function register() {
   try {
     execFileSync(prismaBin, ["migrate", "deploy"], {
       stdio: "inherit",
-      env: { ...process.env },
+      env: { ...process.env, CHECKPOINT_DISABLE: "1" },
     });
   } catch (err) {
     // Log but don't crash the server — the app may still work if tables

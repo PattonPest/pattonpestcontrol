@@ -10,6 +10,10 @@ interface TicketResult {
 }
 
 const SCRATCH_THRESHOLD = 0.6;
+/** Milliseconds before a ticket-issuance POST request is aborted. */
+const ISSUE_TIMEOUT_MS = 15_000;
+/** Milliseconds before a ticket-restoration GET request is aborted. */
+const RESTORE_TIMEOUT_MS = 10_000;
 
 export default function ScratchPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -43,11 +47,14 @@ export default function ScratchPage() {
   async function issueTicket(contact: string) {
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ISSUE_TIMEOUT_MS);
     try {
       const res = await fetch("/api/scratch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contact }),
+        signal: controller.signal,
       });
 
       if (res.status === 409) {
@@ -71,8 +78,13 @@ export default function ScratchPage() {
       localStorage.setItem("scratch_id", data.ticketId);
       localStorage.setItem("scratch_contact", contact.trim().toLowerCase());
     } catch (e) {
-      setError(String(e instanceof Error ? e.message : e));
+      if (e instanceof Error && e.name === "AbortError") {
+        setError("Request timed out. Please check your connection and try again.");
+      } else {
+        setError(String(e instanceof Error ? e.message : e));
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   }
@@ -84,15 +96,35 @@ export default function ScratchPage() {
     if (savedMonth === monthKey() && savedId) {
       setContactSubmitted(true);
       setLoading(true);
-      fetch(`/api/scratch/${savedId}`)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), RESTORE_TIMEOUT_MS);
+
+      const clearStale = () => {
+        localStorage.removeItem("scratch_month");
+        localStorage.removeItem("scratch_id");
+        localStorage.removeItem("scratch_contact");
+        setContactSubmitted(false);
+      };
+
+      fetch(`/api/scratch/${savedId}`, { signal: controller.signal })
         .then(async (r) => {
           if (r.ok) {
             setTicket(await r.json());
             setAlreadyPlayed(true);
             setRevealed(true);
+          } else {
+            // Ticket not found (e.g. ephemeral DB reset on Vercel) — let user play fresh
+            clearStale();
           }
         })
-        .finally(() => setLoading(false));
+        .catch(() => {
+          // Network error or timeout — clear stale data so user can try again
+          clearStale();
+        })
+        .finally(() => {
+          clearTimeout(timeoutId);
+          setLoading(false);
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
