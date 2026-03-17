@@ -25,7 +25,6 @@ export default function ScratchPage() {
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
   const [contactInput, setContactInput] = useState("");
   const [contactSubmitted, setContactSubmitted] = useState(false);
-  const [copied, setCopied] = useState(false);
   const isScratching = useRef(false);
   const hasAutoRevealed = useRef(false);
 
@@ -256,64 +255,6 @@ export default function ScratchPage() {
 
   const isWinner = ticket?.outcome !== "No prize";
 
-  const ticketUrl =
-    typeof window !== "undefined" && ticket
-      ? `${window.location.origin}/ticket/${ticket.ticketId}`
-      : "";
-
-  function handleCopyLink() {
-    if (!ticketUrl) return;
-    navigator.clipboard.writeText(ticketUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {
-      setCopied(false);
-    });
-  }
-
-  const shareableLinkBlock = (
-    <div style={{ marginTop: 16, textAlign: "center" }}>
-      <p style={{ color: theme.mutedTextColor, fontSize: 12, marginBottom: 6 }}>
-        🔗 Your ticket link (share to redeem):
-      </p>
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <input
-          readOnly
-          value={ticketUrl}
-          style={{
-            flex: 1,
-            fontSize: 11,
-            padding: "6px 8px",
-            borderRadius: 6,
-            border: `1px solid ${theme.inputBorderColor}`,
-            background: "rgba(255,255,255,0.9)",
-            color: "#333",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-          onFocus={(e) => e.target.select()}
-        />
-        <button
-          onClick={handleCopyLink}
-          style={{
-            background: theme.buttonBackground,
-            color: theme.buttonColor,
-            border: "none",
-            borderRadius: 6,
-            padding: "6px 10px",
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {copied ? "✓ Copied!" : "Copy"}
-        </button>
-      </div>
-    </div>
-  );
-
   // ─────────────────────────────────────────────────────────────────────────
   // Dynamic styles built from current theme
   // ─────────────────────────────────────────────────────────────────────────
@@ -405,11 +346,10 @@ export default function ScratchPage() {
             <div style={s.prizeDesc}>{ticket?.description}</div>
             {isWinner && (
               <p style={s.callToAction}>
-                📞 Call us at <strong>(555) 123-4567</strong> to redeem!
+                📞 Call us at <strong>440-338-3101</strong> to redeem!
               </p>
             )}
           </div>
-          {shareableLinkBlock}
         </div>
       </main>
     );
@@ -436,7 +376,7 @@ export default function ScratchPage() {
                 <div style={s.prizeDesc}>{ticket?.description}</div>
                 {isWinner && (
                   <p style={s.callToAction}>
-                    📞 Call us at <strong>(555) 123-4567</strong> to redeem!
+                    📞 Call us at <strong>440-338-3101</strong> to redeem!
                   </p>
                 )}
               </div>
@@ -464,7 +404,6 @@ export default function ScratchPage() {
             Come back next month for another chance!
           </p>
         )}
-        {revealed && shareableLinkBlock}
       </div>
     </main>
   );
