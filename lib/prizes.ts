@@ -24,6 +24,13 @@ async function ensurePrizesSeeded(): Promise<void> {
       })),
     });
   }
+
+  // Everyone is always a winner — deactivate any "No prize" entry that may
+  // have been seeded by an older version of the config.
+  await prisma.prize.updateMany({
+    where: { label: "No prize", active: true },
+    data: { active: false },
+  });
 }
 
 /** Draws a prize using secure randomness weighted by each prize's weight. */
