@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Ticket {
-  id        String   @id @default(cuid())
-  outcome   String
-  contact   String   // normalized: trimmed, lowercased; phone digits-only if no '@'
-  createdAt DateTime @default(now())
-  revealed  Boolean  @default(false)
-  ipHash    String?
+  id             String   @id @default(cuid())
+  outcome        String
+  contact        String   // normalized: trimmed, lowercased; phone digits-only if no '@'
+  createdAt      DateTime @default(now())
+  revealed       Boolean  @default(false)
+  ipHash         String?
+  redemptionCode String   @unique // short human-readable code for in-store redemption
 
   @@index([contact])
 }
