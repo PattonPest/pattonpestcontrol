@@ -344,11 +344,9 @@ export default function ScratchPage() {
           <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
             <div style={s.prizeLabel}>{ticket?.outcome}</div>
             <div style={s.prizeDesc}>{ticket?.description}</div>
-            {isWinner && (
-              <p style={s.callToAction}>
-                📞 Call us at <strong>(555) 123-4567</strong> to redeem!
-              </p>
-            )}
+            <p style={s.callToAction}>
+              📞 Call us at <strong>440-338-3101</strong> to redeem!
+            </p>
           </div>
         </div>
       </main>
@@ -374,11 +372,9 @@ export default function ScratchPage() {
               <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
                 <div style={s.prizeLabel}>{ticket?.outcome}</div>
                 <div style={s.prizeDesc}>{ticket?.description}</div>
-                {isWinner && (
-                  <p style={s.callToAction}>
-                    📞 Call us at <strong>(555) 123-4567</strong> to redeem!
-                  </p>
-                )}
+                <p style={s.callToAction}>
+                  📞 Call us at <strong>440-338-3101</strong> to redeem!
+                </p>
               </div>
             ) : (
               <div style={s.hiddenBg}>
