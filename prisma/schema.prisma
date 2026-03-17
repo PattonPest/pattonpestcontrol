@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  outcome   String
+  contact   String   // normalized: trimmed, lowercased; phone digits-only if no '@'
+  createdAt DateTime @default(now())
+  revealed  Boolean  @default(false)
+  ipHash    String?
+
+  @@index([contact])
+}
+
+model Prize {
+  id          String   @id @default(cuid())
+  label       String
+  description String
+  weight      Int
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Setting {
+  key   String @id
+  value String
+}
