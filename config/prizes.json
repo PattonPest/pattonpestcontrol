@@ -1,6 +1,5 @@
 {
   "prizes": [
-    { "label": "No prize",     "weight": 70, "description": "Better luck next time!" },
     { "label": "$5 off",       "weight": 20, "description": "Get $5 off your next service!" },
     { "label": "$25 off",      "weight": 9,  "description": "Get $25 off your next service!" },
     { "label": "Free service", "weight": 1,  "description": "You won a FREE service!" }
