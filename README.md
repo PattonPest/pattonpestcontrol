@@ -4,6 +4,19 @@ A fun promotional web app where customers enter their phone number or email to s
 
 ---
 
+## 🚨 Getting a 404 on Vercel? Read this first.
+
+If you deployed to Vercel and see **"404: NOT_FOUND"** (possibly with an ID like `cle1::wnvdb-...`), it means Vercel deployed from the wrong branch. The app code is in this **pull request** — it has NOT been merged into `main` yet.
+
+**Fix in 2 steps:**
+
+1. **Merge this pull request into main** — on the GitHub page for this repo, click the **"Merge pull request"** button (green button near the bottom of the PR page).
+2. **Vercel will automatically redeploy** within ~2 minutes after the merge. Your URL will start working.
+
+That's it. No other changes needed — the environment variables you already set are fine.
+
+---
+
 ## 🧪 How to Test It Right Now (No Coding Experience Needed)
 
 ### Option A — Test it on your computer (free, takes ~5 minutes)
@@ -66,7 +79,9 @@ npm run dev
 
 ### Option B — Deploy it live on the internet (free, takes ~10 minutes)
 
-1. Make sure this repo is on your GitHub account (it already is at `PattonPest/pattonpestcontrol`)
+> ⚠️ **You must complete Step 1 (merge the PR) before Vercel will work.**
+
+1. **Merge this pull request** — on the GitHub page for this repo, click **"Merge pull request"** (the green button at the bottom of the PR). This moves the app code into the `main` branch, which is what Vercel deploys.
 2. Go to [https://vercel.com](https://vercel.com) and sign in with your GitHub account
 3. Click **"Add New Project"**
 4. Find and click **`PattonPest/pattonpestcontrol`**
@@ -80,8 +95,6 @@ npm run dev
 6. Click **Deploy** and wait ~2 minutes
 7. Vercel gives you a free URL like `https://pattonpestcontrol.vercel.app`
 8. Share that URL with customers — they go to `/scratch` to play!
-
-> ⚠️ **Important:** On the free Vercel plan, the SQLite database resets when you redeploy (ticket history clears). This is fine for testing. For long-term use, see the "Persistent Database" note at the bottom.
 
 ---
 

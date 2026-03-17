@@ -11,6 +11,8 @@ build/
 # Prisma
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
 
 # Env files
 .env
