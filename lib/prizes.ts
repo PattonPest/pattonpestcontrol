@@ -81,6 +81,34 @@ const SEASONAL_PRIZE_DESCRIPTIONS: Record<string, string> = Object.fromEntries(
   ])
 );
 
+export interface SpringPrizeOdds {
+  label: string;
+  description: string;
+  /** Percentage chance of winning this prize (0–100). */
+  chance: number;
+}
+
+export interface SpringPrizePools {
+  recurring: SpringPrizeOdds[];
+  onetime: SpringPrizeOdds[];
+}
+
+/** Returns both spring prize pools with pre-calculated odds percentages. */
+export function getSpringPrizePools(): SpringPrizePools {
+  function withOdds(prizes: SeasonalPrize[]): SpringPrizeOdds[] {
+    const total = prizes.reduce((sum, p) => sum + p.weight, 0);
+    return prizes.map((p) => ({
+      label: p.label,
+      description: p.description,
+      chance: total > 0 ? (p.weight / total) * 100 : 0,
+    }));
+  }
+  return {
+    recurring: withOdds(SPRING_PRIZES_RECURRING),
+    onetime: withOdds(SPRING_PRIZES_ONETIME),
+  };
+}
+
 /** Returns the description for a seasonal prize label, or null if not found. */
 export function getSeasonalPrizeDescription(label: string): string | null {
   return SEASONAL_PRIZE_DESCRIPTIONS[label] ?? null;

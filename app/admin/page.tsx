@@ -28,6 +28,17 @@ interface Stats {
   byPrize: { prize: string; count: number }[];
 }
 
+interface SpringPrizeOdds {
+  label: string;
+  description: string;
+  chance: number;
+}
+
+interface SpringPrizePools {
+  recurring: SpringPrizeOdds[];
+  onetime: SpringPrizeOdds[];
+}
+
 const BLANK_FORM = {
   label: "",
   description: "",
@@ -42,6 +53,7 @@ export default function AdminPage() {
 
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [springPools, setSpringPools] = useState<SpringPrizePools | null>(null);
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -70,12 +82,15 @@ export default function AdminPage() {
     async (t: string) => {
       setLoadError("");
       try {
-        const [prRes, stRes, thRes] = await Promise.all([
+        const [prRes, stRes, thRes, spRes] = await Promise.all([
           fetch("/api/admin/prizes", {
             headers: { "x-admin-token": t },
           }),
           fetch(`/api/admin/stats?token=${encodeURIComponent(t)}`),
           fetch("/api/admin/theme", {
+            headers: { "x-admin-token": t },
+          }),
+          fetch("/api/admin/spring-prizes", {
             headers: { "x-admin-token": t },
           }),
         ]);
@@ -93,6 +108,9 @@ export default function AdminPage() {
           setThemes(thData.themes ?? []);
           setActiveTheme(thData.activeTheme ?? "auto");
           setAutoDetected(thData.autoDetected ?? "default");
+        }
+        if (spRes.ok) {
+          setSpringPools(await spRes.json());
         }
       } catch (e) {
         setLoadError(String(e));
@@ -353,6 +371,70 @@ export default function AdminPage() {
           </em>
         </p>
 
+        {/* Spring seasonal prize odds */}
+        {springPools && (
+          <>
+            <h2 style={{ ...s.h2, marginTop: 28 }}>🌸 Spring Ticket Odds (March – May)</h2>
+            <p style={s.muted}>
+              During March, April, and May the standard prize pool is replaced by
+              seasonal spring pools. The odds below are locked in the app code and
+              apply to every ticket issued in those months.
+            </p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginTop: 14 }}>
+              {/* Recurring customers pool */}
+              <div style={{ flex: "1 1 280px" }}>
+                <h3 style={s.h3}>♻️ Recurring Customers</h3>
+                <div style={s.tableWrap}>
+                  <table style={s.table}>
+                    <thead>
+                      <tr>
+                        <th style={s.th}>Prize</th>
+                        <th style={{ ...s.th, textAlign: "center" }}>Odds</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {springPools.recurring.map((p) => (
+                        <tr key={p.label}>
+                          <td style={s.td}>{p.label}</td>
+                          <td style={{ ...s.td, textAlign: "center", fontWeight: 600 }}>
+                            {p.chance.toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* One-time customers pool */}
+              <div style={{ flex: "1 1 280px" }}>
+                <h3 style={s.h3}>1️⃣ One-Time Customers</h3>
+                <div style={s.tableWrap}>
+                  <table style={s.table}>
+                    <thead>
+                      <tr>
+                        <th style={s.th}>Prize</th>
+                        <th style={{ ...s.th, textAlign: "center" }}>Odds</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {springPools.onetime.map((p) => (
+                        <tr key={p.label}>
+                          <td style={s.td}>{p.label}</td>
+                          <td style={{ ...s.td, textAlign: "center", fontWeight: 600 }}>
+                            {p.chance.toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Add / Edit form */}
         <h2 style={{ ...s.h2, marginTop: 28 }}>
           {editId === "new" ? "➕ Add New Prize" : editId ? "✏️ Edit Prize" : ""}
@@ -540,6 +622,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   h1: { fontSize: 22, fontWeight: 800, color: "#1a472a", margin: 0 },
   h2: { fontSize: 17, fontWeight: 700, color: "#333", marginBottom: 12 },
+  h3: { fontSize: 14, fontWeight: 700, color: "#555", marginBottom: 8 },
   muted: { color: "#888", fontSize: 13 },
   error: { color: "#c0392b", fontSize: 14, margin: "8px 0" },
   success: { color: "#27ae60", fontSize: 14, margin: "8px 0" },
