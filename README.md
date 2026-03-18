@@ -141,17 +141,17 @@ The weights add up to 100, so they work like percentages here. But they don't *h
 ## 🎨 How to Change the Ticket Theme
 
 The ticket automatically picks a seasonal theme based on today's date:
-- 🐛 Default (Patton Pest Control)
-- 🦟 Summer (June–August)
-- 🐝 Spring (March–May)
-- 🎄 Christmas (December 20–26)
-- 🕷️ Halloween (October 25–31)
-- 🦃 Thanksgiving (last week of November)
-- 💝 Valentine's Day (February 10–14)
-- 🎉 New Year (January 1–3)
-- 🎆 4th of July (July 1–7)
-- 🍀 St. Patrick's Day (March 14–17)
-- 🐣 Easter (one week window around Easter Sunday)
+- 🐛 Default (Patton Pest Control) — year-round fallback
+- 🎉 New Year (January 1)
+- 💝 Valentine's Day (February 1–14)
+- 🍀 St. Patrick's Day (March 10–17)
+- 🐣 Easter (one week before through one week after Easter Sunday)
+- 🐝 Spring (March 18 – June 14, outside Easter window)
+- 🎆 4th of July (June 28 – July 7)
+- 🦟 Summer (June 15 – September 7, outside 4th of July window)
+- 🕷️ Halloween (all of October)
+- 🦃 Thanksgiving (two weeks before through Thanksgiving Day)
+- 🎄 Christmas / Holiday (after Thanksgiving through December 31)
 
 **To manually set a theme:**
 1. Go to `/admin` and log in

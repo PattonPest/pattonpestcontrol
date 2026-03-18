@@ -387,8 +387,8 @@ export default function ScratchPage() {
             chance!
           </p>
           <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
-            <div style={s.prizeLabel}>{ticket?.outcome}</div>
-            <div style={s.prizeDesc}>{ticket?.description}</div>
+            <div style={isWinner ? s.prizeLabel : s.prizeLabelLoser}>{ticket?.outcome}</div>
+            <div style={isWinner ? s.prizeDesc : s.prizeDescLoser}>{ticket?.description}</div>
             {isWinner && (
               <p style={s.callToAction}>
                 📞 Call us at <strong>440-338-3101</strong> to redeem!
@@ -416,8 +416,8 @@ export default function ScratchPage() {
           <div style={s.prizeRevealArea}>
             {revealed ? (
               <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
-                <div style={s.prizeLabel}>{ticket?.outcome}</div>
-                <div style={s.prizeDesc}>{ticket?.description}</div>
+                <div style={isWinner ? s.prizeLabel : s.prizeLabelLoser}>{ticket?.outcome}</div>
+                <div style={isWinner ? s.prizeDesc : s.prizeDescLoser}>{ticket?.description}</div>
                 {isWinner && (
                   <p style={s.callToAction}>
                     📞 Call us at <strong>440-338-3101</strong> to redeem!
@@ -590,9 +590,19 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       color: t.winnerTextColor,
       marginBottom: 6,
     },
+    prizeLabelLoser: {
+      fontSize: 28,
+      fontWeight: 800,
+      color: t.loserTextColor,
+      marginBottom: 6,
+    },
     prizeDesc: {
       fontSize: 15,
       color: t.winnerTextColor,
+    },
+    prizeDescLoser: {
+      fontSize: 15,
+      color: t.loserTextColor,
     },
     callToAction: {
       marginTop: 12,
