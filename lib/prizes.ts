@@ -15,7 +15,7 @@ export interface Prize {
 // These are not stored in the database and take precedence over DB prizes.
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface SeasonalPrize {
+export interface SeasonalPrize {
   label: string;
   weight: number;
   description: string;
@@ -84,6 +84,20 @@ const SEASONAL_PRIZE_DESCRIPTIONS: Record<string, string> = Object.fromEntries(
 /** Returns the description for a seasonal prize label, or null if not found. */
 export function getSeasonalPrizeDescription(label: string): string | null {
   return SEASONAL_PRIZE_DESCRIPTIONS[label] ?? null;
+}
+
+/**
+ * Returns the spring seasonal prize pools for both customer types.
+ * Useful for displaying prize odds in the admin panel and on the scratch page.
+ */
+export function getSpringPrizes(): {
+  recurring: SeasonalPrize[];
+  onetime: SeasonalPrize[];
+} {
+  return {
+    recurring: SPRING_PRIZES_RECURRING,
+    onetime: SPRING_PRIZES_ONETIME,
+  };
 }
 
 /** Returns true when the current calendar month is a spring month (March–May). */

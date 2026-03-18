@@ -28,6 +28,34 @@ interface Stats {
   byPrize: { prize: string; count: number }[];
 }
 
+interface SeasonalPrizeOdds {
+  label: string;
+  description: string;
+  weight: number;
+  odds: string;
+}
+
+interface SeasonalPrizesData {
+  spring: {
+    recurring: SeasonalPrizeOdds[];
+    onetime: SeasonalPrizeOdds[];
+  };
+}
+
+interface ContactEntry {
+  id: string;
+  contact: string;
+  serviceType: string;
+  outcome: string;
+  createdAt: string;
+}
+
+interface ContactsData {
+  total: number;
+  since: string;
+  contacts: ContactEntry[];
+}
+
 const BLANK_FORM = {
   label: "",
   description: "",
@@ -42,6 +70,9 @@ export default function AdminPage() {
 
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [seasonalPrizes, setSeasonalPrizes] = useState<SeasonalPrizesData | null>(null);
+  const [contacts, setContacts] = useState<ContactsData | null>(null);
+  const [contactSearch, setContactSearch] = useState("");
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -70,12 +101,18 @@ export default function AdminPage() {
     async (t: string) => {
       setLoadError("");
       try {
-        const [prRes, stRes, thRes] = await Promise.all([
+        const [prRes, stRes, thRes, spRes, ctRes] = await Promise.all([
           fetch("/api/admin/prizes", {
             headers: { "x-admin-token": t },
           }),
           fetch(`/api/admin/stats?token=${encodeURIComponent(t)}`),
           fetch("/api/admin/theme", {
+            headers: { "x-admin-token": t },
+          }),
+          fetch("/api/admin/seasonal-prizes", {
+            headers: { "x-admin-token": t },
+          }),
+          fetch("/api/admin/contacts", {
             headers: { "x-admin-token": t },
           }),
         ]);
@@ -94,6 +131,8 @@ export default function AdminPage() {
           setActiveTheme(thData.activeTheme ?? "auto");
           setAutoDetected(thData.autoDetected ?? "default");
         }
+        if (spRes.ok) setSeasonalPrizes(await spRes.json());
+        if (ctRes.ok) setContacts(await ctRes.json());
       } catch (e) {
         setLoadError(String(e));
       }
@@ -353,6 +392,86 @@ export default function AdminPage() {
           </em>
         </p>
 
+        {/* ── Spring Seasonal Prize Odds ─────────────────────────────────── */}
+        {seasonalPrizes && (
+          <>
+            <h2 style={{ ...s.h2, marginTop: 32 }}>
+              🌸 Spring Seasonal Prize Odds (March–May)
+            </h2>
+            <p style={s.muted}>
+              During March, April, and May, the standard prize pool is replaced
+              by these seasonal prizes. Odds are fixed and determined by the
+              weights below.
+            </p>
+
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" as const, marginTop: 14 }}>
+              {/* Recurring customers */}
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <h3 style={s.h3}>🔁 Recurring Service Customers</h3>
+                <div style={s.tableWrap}>
+                  <table style={s.table}>
+                    <thead>
+                      <tr>
+                        <th style={s.th}>Prize</th>
+                        <th style={{ ...s.th, textAlign: "center" as const }}>Weight</th>
+                        <th style={{ ...s.th, textAlign: "center" as const }}>Odds</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seasonalPrizes.spring.recurring.map((p) => (
+                        <tr key={p.label}>
+                          <td style={s.td}>
+                            <div style={{ fontWeight: 600 }}>{p.label}</div>
+                            {p.description && (
+                              <div style={{ ...s.muted, marginTop: 2 }}>{p.description}</div>
+                            )}
+                          </td>
+                          <td style={{ ...s.td, textAlign: "center" as const }}>{p.weight}</td>
+                          <td style={{ ...s.td, textAlign: "center" as const, fontWeight: 700 }}>
+                            {p.odds}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* One-time service customers */}
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <h3 style={s.h3}>1️⃣ One-Time Service Customers</h3>
+                <div style={s.tableWrap}>
+                  <table style={s.table}>
+                    <thead>
+                      <tr>
+                        <th style={s.th}>Prize</th>
+                        <th style={{ ...s.th, textAlign: "center" as const }}>Weight</th>
+                        <th style={{ ...s.th, textAlign: "center" as const }}>Odds</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seasonalPrizes.spring.onetime.map((p) => (
+                        <tr key={p.label}>
+                          <td style={s.td}>
+                            <div style={{ fontWeight: 600 }}>{p.label}</div>
+                            {p.description && (
+                              <div style={{ ...s.muted, marginTop: 2 }}>{p.description}</div>
+                            )}
+                          </td>
+                          <td style={{ ...s.td, textAlign: "center" as const }}>{p.weight}</td>
+                          <td style={{ ...s.td, textAlign: "center" as const, fontWeight: 700 }}>
+                            {p.odds}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Add / Edit form */}
         <h2 style={{ ...s.h2, marginTop: 28 }}>
           {editId === "new" ? "➕ Add New Prize" : editId ? "✏️ Edit Prize" : ""}
@@ -511,6 +630,76 @@ export default function AdminPage() {
             </span>
           )}
         </div>
+
+        {/* ── Contact & Player Log ──────────────────────────────────────── */}
+        <h2 style={{ ...s.h2, marginTop: 36 }}>📋 Contact &amp; Player Log</h2>
+        <p style={s.muted}>
+          Every email address and phone number entered over the last 6 months,
+          newest first. Phone numbers are stored as digits only (e.g.
+          4403383101).
+        </p>
+
+        {contacts && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0 10px" }}>
+              <input
+                style={{ ...s.input, maxWidth: 280, marginBottom: 0 }}
+                placeholder="Search contact…"
+                value={contactSearch}
+                onChange={(e) => setContactSearch(e.target.value)}
+              />
+              <span style={s.muted}>
+                {(() => {
+                  const filtered = contacts.contacts.filter((c) =>
+                    c.contact.toLowerCase().includes(contactSearch.toLowerCase().trim())
+                  );
+                  return `${filtered.length} of ${contacts.total} entries`;
+                })()}
+              </span>
+            </div>
+
+            <div style={s.tableWrap}>
+              <table style={s.table}>
+                <thead>
+                  <tr>
+                    <th style={s.th}>Contact (email / phone)</th>
+                    <th style={s.th}>Service Type</th>
+                    <th style={s.th}>Prize Won</th>
+                    <th style={{ ...s.th, whiteSpace: "nowrap" as const }}>Date &amp; Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.contacts
+                    .filter((c) =>
+                      c.contact.toLowerCase().includes(contactSearch.toLowerCase().trim())
+                    )
+                    .map((c) => (
+                      <tr key={c.id}>
+                        <td style={{ ...s.td, fontFamily: "monospace", fontSize: 13 }}>
+                          {c.contact}
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" as const }}>
+                          {c.serviceType === "recurring"
+                            ? "🔁 Recurring"
+                            : c.serviceType === "onetime"
+                            ? "1️⃣ One-Time"
+                            : <em style={s.muted}>—</em>}
+                        </td>
+                        <td style={s.td}>{c.outcome}</td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" as const, fontSize: 13 }}>
+                          {new Date(c.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {contacts.total === 0 && (
+              <p style={{ ...s.muted, marginTop: 8 }}>No entries yet.</p>
+            )}
+          </>
+        )}
       </div>
     </main>
   );
@@ -540,6 +729,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   h1: { fontSize: 22, fontWeight: 800, color: "#1a472a", margin: 0 },
   h2: { fontSize: 17, fontWeight: 700, color: "#333", marginBottom: 12 },
+  h3: { fontSize: 14, fontWeight: 700, color: "#555", marginBottom: 8 },
   muted: { color: "#888", fontSize: 13 },
   error: { color: "#c0392b", fontSize: 14, margin: "8px 0" },
   success: { color: "#27ae60", fontSize: 14, margin: "8px 0" },
