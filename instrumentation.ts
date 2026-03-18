@@ -26,12 +26,13 @@ export async function register() {
     // template is still preferable to the "unsafe" variant as a convention.
     await prisma.$executeRaw`
       CREATE TABLE IF NOT EXISTS "Ticket" (
-        "id"        TEXT     NOT NULL PRIMARY KEY,
-        "outcome"   TEXT     NOT NULL,
-        "contact"   TEXT     NOT NULL,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "revealed"  BOOLEAN  NOT NULL DEFAULT false,
-        "ipHash"    TEXT
+        "id"          TEXT     NOT NULL PRIMARY KEY,
+        "outcome"     TEXT     NOT NULL,
+        "contact"     TEXT     NOT NULL,
+        "serviceType" TEXT     NOT NULL DEFAULT '',
+        "createdAt"   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "revealed"    BOOLEAN  NOT NULL DEFAULT false,
+        "ipHash"      TEXT
       )
     `;
 
@@ -60,5 +61,14 @@ export async function register() {
     // Log but don't crash the server — Prisma queries will fail gracefully if
     // tables are genuinely missing, which is a clearer signal than a silent crash.
     console.error("[DB] Schema initialisation failed:", err);
+  }
+
+  // Add serviceType column to existing Ticket tables that were created before this
+  // column was introduced. SQLite does not support ADD COLUMN IF NOT EXISTS, so we
+  // attempt the ALTER and silently ignore the error when the column already exists.
+  try {
+    await prisma.$executeRaw`ALTER TABLE "Ticket" ADD COLUMN "serviceType" TEXT NOT NULL DEFAULT ''`;
+  } catch {
+    // Column already exists — nothing to do.
   }
 }
