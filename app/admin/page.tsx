@@ -42,6 +42,20 @@ interface SeasonalPrizesData {
   };
 }
 
+interface ContactEntry {
+  id: string;
+  contact: string;
+  serviceType: string;
+  outcome: string;
+  createdAt: string;
+}
+
+interface ContactsData {
+  total: number;
+  since: string;
+  contacts: ContactEntry[];
+}
+
 const BLANK_FORM = {
   label: "",
   description: "",
@@ -57,6 +71,8 @@ export default function AdminPage() {
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [seasonalPrizes, setSeasonalPrizes] = useState<SeasonalPrizesData | null>(null);
+  const [contacts, setContacts] = useState<ContactsData | null>(null);
+  const [contactSearch, setContactSearch] = useState("");
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -85,7 +101,7 @@ export default function AdminPage() {
     async (t: string) => {
       setLoadError("");
       try {
-        const [prRes, stRes, thRes, spRes] = await Promise.all([
+        const [prRes, stRes, thRes, spRes, ctRes] = await Promise.all([
           fetch("/api/admin/prizes", {
             headers: { "x-admin-token": t },
           }),
@@ -94,6 +110,9 @@ export default function AdminPage() {
             headers: { "x-admin-token": t },
           }),
           fetch("/api/admin/seasonal-prizes", {
+            headers: { "x-admin-token": t },
+          }),
+          fetch("/api/admin/contacts", {
             headers: { "x-admin-token": t },
           }),
         ]);
@@ -113,6 +132,7 @@ export default function AdminPage() {
           setAutoDetected(thData.autoDetected ?? "default");
         }
         if (spRes.ok) setSeasonalPrizes(await spRes.json());
+        if (ctRes.ok) setContacts(await ctRes.json());
       } catch (e) {
         setLoadError(String(e));
       }
@@ -610,6 +630,76 @@ export default function AdminPage() {
             </span>
           )}
         </div>
+
+        {/* ── Contact & Player Log ──────────────────────────────────────── */}
+        <h2 style={{ ...s.h2, marginTop: 36 }}>📋 Contact &amp; Player Log</h2>
+        <p style={s.muted}>
+          Every email address and phone number entered over the last 6 months,
+          newest first. Phone numbers are stored as digits only (e.g.
+          4403383101).
+        </p>
+
+        {contacts && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0 10px" }}>
+              <input
+                style={{ ...s.input, maxWidth: 280, marginBottom: 0 }}
+                placeholder="Search contact…"
+                value={contactSearch}
+                onChange={(e) => setContactSearch(e.target.value)}
+              />
+              <span style={s.muted}>
+                {(() => {
+                  const filtered = contacts.contacts.filter((c) =>
+                    c.contact.toLowerCase().includes(contactSearch.toLowerCase().trim())
+                  );
+                  return `${filtered.length} of ${contacts.total} entries`;
+                })()}
+              </span>
+            </div>
+
+            <div style={s.tableWrap}>
+              <table style={s.table}>
+                <thead>
+                  <tr>
+                    <th style={s.th}>Contact (email / phone)</th>
+                    <th style={s.th}>Service Type</th>
+                    <th style={s.th}>Prize Won</th>
+                    <th style={{ ...s.th, whiteSpace: "nowrap" as const }}>Date &amp; Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.contacts
+                    .filter((c) =>
+                      c.contact.toLowerCase().includes(contactSearch.toLowerCase().trim())
+                    )
+                    .map((c) => (
+                      <tr key={c.id}>
+                        <td style={{ ...s.td, fontFamily: "monospace", fontSize: 13 }}>
+                          {c.contact}
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" as const }}>
+                          {c.serviceType === "recurring"
+                            ? "🔁 Recurring"
+                            : c.serviceType === "onetime"
+                            ? "1️⃣ One-Time"
+                            : <em style={s.muted}>—</em>}
+                        </td>
+                        <td style={s.td}>{c.outcome}</td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" as const, fontSize: 13 }}>
+                          {new Date(c.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {contacts.total === 0 && (
+              <p style={{ ...s.muted, marginTop: 8 }}>No entries yet.</p>
+            )}
+          </>
+        )}
       </div>
     </main>
   );
