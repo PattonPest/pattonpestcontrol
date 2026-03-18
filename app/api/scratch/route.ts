@@ -8,7 +8,7 @@ function normaliseContact(raw: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  let body: { contact?: string } = {};
+  let body: { contact?: string; serviceType?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
   }
 
   const contact = normaliseContact(body.contact);
+  const serviceType =
+    body.serviceType === "recurring" || body.serviceType === "onetime"
+      ? body.serviceType
+      : "";
 
   // Enforce one ticket per contact per calendar month
   const now = new Date();
@@ -50,12 +54,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const prize = await getRandomPrize();
+  const prize = await getRandomPrize(serviceType);
 
   const ticket = await prisma.ticket.create({
     data: {
       outcome: prize.label,
       contact,
+      serviceType,
     },
   });
 

@@ -9,6 +9,8 @@ interface TicketResult {
   description: string;
 }
 
+type ServiceType = "recurring" | "onetime";
+
 const SCRATCH_THRESHOLD = 0.6;
 /** Milliseconds before a ticket-issuance POST request is aborted. */
 const ISSUE_TIMEOUT_MS = 15_000;
@@ -25,6 +27,7 @@ export default function ScratchPage() {
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
   const [contactInput, setContactInput] = useState("");
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [serviceType, setServiceType] = useState<ServiceType | null>(null);
   const isScratching = useRef(false);
   const hasAutoRevealed = useRef(false);
 
@@ -44,7 +47,7 @@ export default function ScratchPage() {
       .catch(() => {});
   }, []);
 
-  async function issueTicket(contact: string) {
+  async function issueTicket(contact: string, svcType: ServiceType) {
     setLoading(true);
     setError(null);
     const controller = new AbortController();
@@ -53,7 +56,7 @@ export default function ScratchPage() {
       const res = await fetch("/api/scratch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contact }),
+        body: JSON.stringify({ contact, serviceType: svcType }),
         signal: controller.signal,
       });
 
@@ -77,6 +80,7 @@ export default function ScratchPage() {
       localStorage.setItem("scratch_month", monthKey());
       localStorage.setItem("scratch_id", data.ticketId);
       localStorage.setItem("scratch_contact", contact.trim().toLowerCase());
+      localStorage.setItem("scratch_service_type", svcType);
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError("Request timed out. Please check your connection and try again.");
@@ -93,7 +97,11 @@ export default function ScratchPage() {
   useEffect(() => {
     const savedMonth = localStorage.getItem("scratch_month");
     const savedId = localStorage.getItem("scratch_id");
+    const savedSvcRaw = localStorage.getItem("scratch_service_type");
+    const savedSvcType: ServiceType | null =
+      savedSvcRaw === "recurring" || savedSvcRaw === "onetime" ? savedSvcRaw : null;
     if (savedMonth === monthKey() && savedId) {
+      if (savedSvcType) setServiceType(savedSvcType);
       setContactSubmitted(true);
       setLoading(true);
       const controller = new AbortController();
@@ -103,7 +111,9 @@ export default function ScratchPage() {
         localStorage.removeItem("scratch_month");
         localStorage.removeItem("scratch_id");
         localStorage.removeItem("scratch_contact");
+        localStorage.removeItem("scratch_service_type");
         setContactSubmitted(false);
+        setServiceType(null);
       };
 
       fetch(`/api/scratch/${savedId}`, { signal: controller.signal })
@@ -131,9 +141,9 @@ export default function ScratchPage() {
 
   async function handleContactSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!contactInput.trim()) return;
+    if (!contactInput.trim() || !serviceType) return;
     setContactSubmitted(true);
-    await issueTicket(contactInput.trim());
+    await issueTicket(contactInput.trim(), serviceType);
   }
 
   // Draw themed scratch overlay on canvas
@@ -253,12 +263,43 @@ export default function ScratchPage() {
     };
   }, [ticket, alreadyPlayed, revealed, scratch]);
 
-  const isWinner = ticket?.outcome !== "No prize";
+  const isWinner =
+    ticket?.outcome !== "No prize" && ticket?.outcome !== "Better Luck Next Time";
 
   // ─────────────────────────────────────────────────────────────────────────
   // Dynamic styles built from current theme
   // ─────────────────────────────────────────────────────────────────────────
   const s = buildStyles(theme);
+
+  // ── Service type selection ─────────────────────────────────────────────────
+  if (!serviceType) {
+    return (
+      <main style={s.main}>
+        <div style={s.card}>
+          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+          <h1 style={s.title}>🎟 Patton Pest Control</h1>
+          <h2 style={s.subtitle}>{theme.name}</h2>
+          <p style={s.tagline}>{theme.tagline}</p>
+          <p style={s.bodyText}>
+            Before we get started — do you currently have a recurring service
+            with us, or are you a one-time service customer?
+          </p>
+          <button
+            style={{ ...s.btnPlay, marginBottom: 12 }}
+            onClick={() => setServiceType("recurring")}
+          >
+            🔁 I have a Recurring Service
+          </button>
+          <button
+            style={{ ...s.btnPlay, background: theme.subtitleColor }}
+            onClick={() => setServiceType("onetime")}
+          >
+            1️⃣ I have a One-Time Service
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   // ── Contact form ───────────────────────────────────────────────────────────
   if (!contactSubmitted) {
@@ -268,7 +309,6 @@ export default function ScratchPage() {
           <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
           <h1 style={s.title}>🎟 Patton Pest Control</h1>
           <h2 style={s.subtitle}>{theme.name}</h2>
-          <div style={s.winnerBanner}>🏆 Everyone is a winner! 🏆</div>
           <p style={s.tagline}>{theme.tagline}</p>
           <p style={s.bodyText}>
             Enter your phone number or email to get your free scratch-off
@@ -288,6 +328,12 @@ export default function ScratchPage() {
               Get My Ticket {theme.emoji}
             </button>
           </form>
+          <button
+            style={{ ...s.btnBack, marginTop: 12 }}
+            onClick={() => setServiceType(null)}
+          >
+            ← Back
+          </button>
         </div>
       </main>
     );
@@ -336,7 +382,6 @@ export default function ScratchPage() {
           <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
           <h1 style={s.title}>🎟 Patton Pest Control</h1>
           <h2 style={s.subtitle}>{theme.name}</h2>
-          <div style={s.winnerBanner}>🏆 Everyone is a winner! 🏆</div>
           <p style={{ ...s.bodyText, marginBottom: 16 }}>
             You already played this month — come back next month for another
             chance!
@@ -344,9 +389,11 @@ export default function ScratchPage() {
           <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
             <div style={s.prizeLabel}>{ticket?.outcome}</div>
             <div style={s.prizeDesc}>{ticket?.description}</div>
-            <p style={s.callToAction}>
-              📞 Call us at <strong>440-338-3101</strong> to redeem!
-            </p>
+            {isWinner && (
+              <p style={s.callToAction}>
+                📞 Call us at <strong>440-338-3101</strong> to redeem!
+              </p>
+            )}
           </div>
         </div>
       </main>
@@ -360,7 +407,6 @@ export default function ScratchPage() {
         <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
         <h1 style={s.title}>🎟 Patton Pest Control</h1>
         <h2 style={s.subtitle}>{theme.name}</h2>
-        <div style={s.winnerBanner}>🏆 Everyone is a winner! 🏆</div>
 
         {!revealed && (
           <p style={s.bodyText}>Scratch the card below to reveal your prize!</p>
@@ -372,9 +418,11 @@ export default function ScratchPage() {
               <div style={isWinner ? s.prizeBoxWinner : s.prizeBoxLoser}>
                 <div style={s.prizeLabel}>{ticket?.outcome}</div>
                 <div style={s.prizeDesc}>{ticket?.description}</div>
-                <p style={s.callToAction}>
-                  📞 Call us at <strong>440-338-3101</strong> to redeem!
-                </p>
+                {isWinner && (
+                  <p style={s.callToAction}>
+                    📞 Call us at <strong>440-338-3101</strong> to redeem!
+                  </p>
+                )}
               </div>
             ) : (
               <div style={s.hiddenBg}>
@@ -481,6 +529,16 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       fontWeight: 700,
       cursor: "pointer",
     },
+    btnBack: {
+      width: "100%",
+      background: "transparent",
+      color: t.subtitleColor,
+      border: `1px solid ${t.inputBorderColor}`,
+      borderRadius: 8,
+      padding: "8px 0",
+      fontSize: 14,
+      cursor: "pointer",
+    },
     scratchWrapper: {
       position: "relative",
       display: "inline-block",
@@ -541,17 +599,6 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       fontSize: 14,
       color: t.ctaColor,
       fontWeight: 600,
-    },
-    winnerBanner: {
-      background: t.buttonBackground,
-      color: t.buttonColor,
-      borderRadius: 20,
-      padding: "5px 16px",
-      fontSize: 13,
-      fontWeight: 700,
-      letterSpacing: "0.04em",
-      display: "inline-block",
-      margin: "8px auto 12px",
     },
   };
 }
