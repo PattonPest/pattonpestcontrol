@@ -11,6 +11,19 @@ interface TicketResult {
 
 type ServiceType = "recurring" | "onetime";
 
+interface PrizeOddsEntry {
+  label: string;
+  description: string;
+  odds: string;
+}
+
+interface PrizeOddsData {
+  season: string;
+  differentiated: boolean;
+  recurring: PrizeOddsEntry[];
+  onetime: PrizeOddsEntry[];
+}
+
 const SCRATCH_THRESHOLD = 0.6;
 /** Milliseconds before a ticket-issuance POST request is aborted. */
 const ISSUE_TIMEOUT_MS = 15_000;
@@ -28,6 +41,7 @@ export default function ScratchPage() {
   const [contactInput, setContactInput] = useState("");
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [serviceType, setServiceType] = useState<ServiceType | null>(null);
+  const [prizeOdds, setPrizeOdds] = useState<PrizeOddsData | null>(null);
   const isScratching = useRef(false);
   const hasAutoRevealed = useRef(false);
 
@@ -37,12 +51,19 @@ export default function ScratchPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   };
 
-  // Fetch active theme on mount
+  // Fetch active theme and prize odds on mount
   useEffect(() => {
     fetch("/api/theme")
       .then((r) => (r.ok ? r.json() : null))
       .then((t) => {
         if (t) setTheme(t);
+      })
+      .catch(() => {});
+
+    fetch("/api/prizes/odds")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setPrizeOdds(data);
       })
       .catch(() => {});
   }, []);
@@ -284,6 +305,31 @@ export default function ScratchPage() {
             Before we get started — do you currently have a recurring service
             with us, or are you a one-time service customer?
           </p>
+
+          {/* Prize previews for each service type */}
+          {prizeOdds && (
+            <div style={s.oddsGrid}>
+              <div style={s.oddsColumn}>
+                <div style={s.oddsHeader}>🔁 Recurring Service</div>
+                {prizeOdds.recurring.map((p) => (
+                  <div key={p.label} style={s.oddsRow}>
+                    <span style={s.oddsLabel}>{p.label}</span>
+                    <span style={s.oddsBadge}>{p.odds}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={s.oddsColumn}>
+                <div style={s.oddsHeader}>1️⃣ One-Time Service</div>
+                {prizeOdds.onetime.map((p) => (
+                  <div key={p.label} style={s.oddsRow}>
+                    <span style={s.oddsLabel}>{p.label}</span>
+                    <span style={s.oddsBadge}>{p.odds}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button
             style={{ ...s.btnPlay, marginBottom: 12 }}
             onClick={() => setServiceType("recurring")}
@@ -303,6 +349,8 @@ export default function ScratchPage() {
 
   // ── Contact form ───────────────────────────────────────────────────────────
   if (!contactSubmitted) {
+    const selectedPrizes =
+      prizeOdds && (serviceType === "recurring" ? prizeOdds.recurring : prizeOdds.onetime);
     return (
       <main style={s.main}>
         <div style={s.card}>
@@ -310,6 +358,22 @@ export default function ScratchPage() {
           <h1 style={s.title}>🎟 Patton Pest Control</h1>
           <h2 style={s.subtitle}>{theme.name}</h2>
           <p style={s.tagline}>{theme.tagline}</p>
+
+          {/* Prize odds for the selected service type */}
+          {selectedPrizes && (
+            <div style={s.oddsBox}>
+              <div style={s.oddsBoxTitle}>
+                🎁 Possible prizes ({serviceType === "recurring" ? "Recurring" : "One-Time"} customer)
+              </div>
+              {selectedPrizes.map((p) => (
+                <div key={p.label} style={s.oddsRow}>
+                  <span style={s.oddsLabel}>{p.label}</span>
+                  <span style={s.oddsBadge}>{p.odds}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <p style={s.bodyText}>
             Enter your phone number or email to get your free scratch-off
             ticket. <strong>One ticket per person per month.</strong>
@@ -618,6 +682,62 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       fontSize: 14,
       color: t.ctaColor,
       fontWeight: 600,
+    },
+    oddsGrid: {
+      display: "flex",
+      gap: 10,
+      marginBottom: 20,
+      textAlign: "left" as const,
+      fontSize: 12,
+    },
+    oddsColumn: {
+      flex: 1,
+      background: "rgba(0,0,0,0.04)",
+      borderRadius: 10,
+      padding: "10px 10px 8px",
+    },
+    oddsHeader: {
+      fontWeight: 700,
+      fontSize: 11,
+      color: t.titleColor,
+      marginBottom: 6,
+      textTransform: "uppercase" as const,
+      letterSpacing: "0.4px",
+    },
+    oddsBox: {
+      background: "rgba(0,0,0,0.04)",
+      borderRadius: 10,
+      padding: "10px 12px 8px",
+      marginBottom: 14,
+      textAlign: "left" as const,
+      fontSize: 12,
+    },
+    oddsBoxTitle: {
+      fontWeight: 700,
+      fontSize: 11,
+      color: t.titleColor,
+      marginBottom: 6,
+      textTransform: "uppercase" as const,
+      letterSpacing: "0.4px",
+    },
+    oddsRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "3px 0",
+      borderBottom: "1px solid rgba(0,0,0,0.06)",
+    },
+    oddsLabel: {
+      color: t.bodyTextColor,
+      fontSize: 11,
+      lineHeight: 1.3,
+      paddingRight: 6,
+    },
+    oddsBadge: {
+      fontWeight: 700,
+      fontSize: 11,
+      color: t.titleColor,
+      whiteSpace: "nowrap" as const,
     },
   };
 }
