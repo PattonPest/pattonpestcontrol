@@ -25,17 +25,17 @@ const SPRING_PRIZES_RECURRING: SeasonalPrize[] = [
   {
     label: "10% off Summer Mosquito Program",
     weight: 30,
-    description: "Enjoy 10% off our Summer Mosquito Program when you bundle Mosquito service and pay for the rest of the year!",
+    description: "Enjoy 10% off our Summer Mosquito Program when you enroll in the Mosquito treatment and pay for the rest of the year!",
   },
   {
     label: "10% off Summer Tick Program",
     weight: 30,
-    description: "Enjoy 10% off our Summer Tick Program when you bundle Tick service and pay for the rest of the year!",
+    description: "Enjoy 10% off our Summer Tick Program when you enroll in the Tick treatment and pay for the rest of the year!",
   },
   {
     label: "5% off Stinging Insect Treatment",
     weight: 35,
-    description: "Enjoy 5% off your Stinging Insect Treatment when you bundle Stinging Insect service and pay for the rest of the year!",
+    description: "Enjoy 5% off your Stinging Insect Treatment when you enroll in the Stinging Insect Treatment and pay for the rest of the year!",
   },
   {
     label: "Better Luck Next Time",
@@ -54,17 +54,17 @@ const SPRING_PRIZES_ONETIME: SeasonalPrize[] = [
   {
     label: "10% off Summer Mosquito Program",
     weight: 10,
-    description: "Enjoy 10% off our Summer Mosquito Program when you bundle Mosquito service and pay for the rest of the year!",
+    description: "Enjoy 10% off our Summer Mosquito Program when you enroll in the Mosquito treatment and pay for the rest of the year!",
   },
   {
     label: "10% off Summer Tick Program",
     weight: 10,
-    description: "Enjoy 10% off our Summer Tick Program when you bundle Tick service and pay for the rest of the year!",
+    description: "Enjoy 10% off our Summer Tick Program when you enroll in the Tick treatment and pay for the rest of the year!",
   },
   {
     label: "5% off Stinging Insect Treatment",
     weight: 10,
-    description: "Enjoy 5% off your Stinging Insect Treatment when you bundle Stinging Insect service and pay for the rest of the year!",
+    description: "Enjoy 5% off your Stinging Insect Treatment when you enroll in the Stinging Insect Treatment and pay for the rest of the year!",
   },
   {
     label: "Better Luck Next Time",
