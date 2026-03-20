@@ -276,10 +276,12 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
-          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-          <h1 style={s.title}>🎟 Patton Pest Control</h1>
-          <h2 style={s.subtitle}>{theme.name}</h2>
-          <p style={s.tagline}>{theme.tagline}</p>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+            <p style={s.tagline}>{theme.tagline}</p>
+          </div>
           <p style={s.bodyText}>
             Before we get started — do you currently have a recurring service
             with us, or are you a one-time service customer?
@@ -306,10 +308,12 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
-          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-          <h1 style={s.title}>🎟 Patton Pest Control</h1>
-          <h2 style={s.subtitle}>{theme.name}</h2>
-          <p style={s.tagline}>{theme.tagline}</p>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+            <p style={s.tagline}>{theme.tagline}</p>
+          </div>
           <p style={s.bodyText}>
             Enter your phone number or email to get your free scratch-off
             ticket. <strong>One ticket per person per month.</strong>
@@ -344,6 +348,11 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+          </div>
           <p style={{ color: theme.bodyTextColor, fontSize: 18 }}>
             Loading your ticket…
           </p>
@@ -357,6 +366,11 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+          </div>
           <p style={{ color: "#c0392b", fontSize: 16, marginBottom: 16 }}>
             {error}
           </p>
@@ -379,9 +393,11 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
-          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-          <h1 style={s.title}>🎟 Patton Pest Control</h1>
-          <h2 style={s.subtitle}>{theme.name}</h2>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+          </div>
           <p style={{ ...s.bodyText, marginBottom: 16 }}>
             You already played this month — come back next month for another
             chance!
@@ -404,9 +420,11 @@ export default function ScratchPage() {
   return (
     <main style={s.main}>
       <div style={s.card}>
-        <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-        <h1 style={s.title}>🎟 Patton Pest Control</h1>
-        <h2 style={s.subtitle}>{theme.name}</h2>
+        <div style={s.cardHeader}>
+          <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+          <h1 style={s.title}>🎟 Patton Pest Control</h1>
+          <h2 style={s.subtitle}>{theme.name}</h2>
+        </div>
 
         {!revealed && (
           <p style={s.bodyText}>Scratch the card below to reveal your prize!</p>
@@ -469,58 +487,66 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
     card: {
       background: t.cardBackground,
       border: t.cardBorder,
-      borderRadius: 20,
-      padding: "32px 28px 36px",
+      borderRadius: 24,
+      padding: "0 28px 32px",
       maxWidth: 420,
       width: "100%",
       textAlign: "center",
       boxShadow: t.cardShadow,
+      overflow: "hidden",
     },
-    bugStrip: {
-      fontSize: 20,
+    cardHeader: {
+      background: t.headerBackground,
+      margin: "0 -28px 20px",
+      padding: "22px 28px 18px",
+      textAlign: "center" as const,
+    },
+    headerEmoji: {
+      fontSize: 22,
       letterSpacing: 8,
       marginBottom: 10,
-      opacity: 0.65,
+      opacity: 0.92,
+      color: t.headerSubtextColor,
     },
     title: {
-      fontSize: 23,
+      fontSize: 22,
       fontWeight: 800,
-      color: t.titleColor,
-      margin: "0 0 3px",
+      color: t.headerTextColor,
+      margin: "0 0 4px",
       letterSpacing: "-0.3px",
     },
     subtitle: {
-      fontSize: 13,
-      color: t.subtitleColor,
+      fontSize: 11,
+      color: t.headerSubtextColor,
       marginTop: 0,
       marginBottom: 4,
       fontWeight: 700,
       textTransform: "uppercase" as const,
-      letterSpacing: "0.5px",
+      letterSpacing: "1px",
     },
     tagline: {
       fontSize: 13,
-      color: t.subtitleColor,
-      marginBottom: 16,
+      color: t.headerSubtextColor,
+      marginBottom: 0,
       fontStyle: "italic",
-      opacity: 0.85,
+      opacity: 0.9,
     },
     bodyText: {
       color: t.bodyTextColor,
       fontSize: 14,
       marginBottom: 16,
-      lineHeight: 1.6,
+      lineHeight: 1.65,
     },
     input: {
       width: "100%",
-      padding: "11px 14px",
+      padding: "12px 16px",
       borderRadius: 10,
       border: `1.5px solid ${t.inputBorderColor}`,
       fontSize: 15,
-      marginBottom: 12,
+      marginBottom: 10,
       boxSizing: "border-box" as const,
       outline: "none",
-      background: "rgba(255,255,255,0.95)",
+      background: "rgba(255,255,255,0.97)",
       color: "#333",
     },
     btnPlay: {
@@ -528,23 +554,24 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       background: t.buttonBackground,
       color: t.buttonColor,
       border: "none",
-      borderRadius: 10,
+      borderRadius: 11,
       padding: "14px 0",
       fontSize: 16,
       fontWeight: 700,
       cursor: "pointer",
       letterSpacing: "0.2px",
-      boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+      boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
     },
     btnBack: {
       width: "100%",
       background: "transparent",
-      color: t.subtitleColor,
+      color: t.bodyTextColor,
       border: `1.5px solid ${t.inputBorderColor}`,
-      borderRadius: 10,
+      borderRadius: 11,
       padding: "10px 0",
       fontSize: 14,
       cursor: "pointer",
+      fontWeight: 600,
     },
     scratchWrapper: {
       position: "relative",
@@ -565,14 +592,14 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       width: "100%",
       height: "100%",
       cursor: "crosshair",
-      borderRadius: 10,
+      borderRadius: 12,
       touchAction: "none",
     },
     hiddenBg: {
       width: "100%",
       height: 170,
       background: t.canvasFill,
-      borderRadius: 10,
+      borderRadius: 12,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -583,7 +610,7 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       padding: "22px 24px",
       width: "100%",
       boxSizing: "border-box" as const,
-      boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
     },
     prizeBoxLoser: {
       background: t.loserBackground,
@@ -593,14 +620,14 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       boxSizing: "border-box" as const,
     },
     prizeLabel: {
-      fontSize: 28,
+      fontSize: 26,
       fontWeight: 800,
       color: t.winnerTextColor,
       marginBottom: 6,
       letterSpacing: "-0.5px",
     },
     prizeLabelLoser: {
-      fontSize: 28,
+      fontSize: 26,
       fontWeight: 800,
       color: t.loserTextColor,
       marginBottom: 6,
