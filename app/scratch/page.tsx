@@ -316,7 +316,7 @@ export default function ScratchPage() {
           </div>
           <p style={s.bodyText}>
             Enter your phone number or email to get your free scratch-off
-            ticket. <strong>One ticket per person per month.</strong>
+            ticket. <strong>One free play per account holder.</strong>
           </p>
           <form onSubmit={handleContactSubmit} style={{ width: "100%" }}>
             <input

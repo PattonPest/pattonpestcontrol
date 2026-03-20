@@ -136,7 +136,7 @@ export default function HomePage() {
             Play our virtual scratch-off for a chance to win exclusive
             discounts.{" "}
             <strong style={{ color: "#1a472a" }}>
-              One free play per person per month.
+              One free play per account holder.
             </strong>
           </p>
 
