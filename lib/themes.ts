@@ -44,6 +44,14 @@ export interface Theme {
   loserBackground: string;
   loserTextColor: string;
   ctaColor: string;
+
+  // ── Card header band ───────────────────────────────────────────────────────
+  /** Gradient/color for the themed top band of the scratch card */
+  headerBackground: string;
+  /** Primary text color used inside the header band (company name) */
+  headerTextColor: string;
+  /** Secondary text color inside the header band (theme name, tagline, emojis) */
+  headerSubtextColor: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -77,6 +85,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#f0f0f0",
     loserTextColor: "#333333",
     ctaColor: "#1a472a",
+    headerBackground: "linear-gradient(135deg, #1a472a 0%, #2d6a35 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,255,255,0.82)",
   },
 
   // ── Summer ─────────────────────────────────────────────────────────────────
@@ -105,6 +116,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#caf0f8",
     loserTextColor: "#023e8a",
     ctaColor: "#005f99",
+    headerBackground: "linear-gradient(135deg, #005f99 0%, #0077b6 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,255,255,0.85)",
   },
 
   // ── Spring ─────────────────────────────────────────────────────────────────
@@ -133,6 +147,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#f3e5f5",
     loserTextColor: "#6a1b9a",
     ctaColor: "#6a1b9a",
+    headerBackground: "linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,255,255,0.85)",
   },
 
   // ── Christmas ──────────────────────────────────────────────────────────────
@@ -161,6 +178,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#e8f5e9",
     loserTextColor: "#1c5e1c",
     ctaColor: "#1c5e1c",
+    headerBackground: "linear-gradient(135deg, #850000 0%, #a50000 60%, #1c5e1c 100%)",
+    headerTextColor: "#fffef8",
+    headerSubtextColor: "rgba(255,254,248,0.84)",
   },
 
   // ── Halloween ──────────────────────────────────────────────────────────────
@@ -189,6 +209,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#2d1500",
     loserTextColor: "#f0c090",
     ctaColor: "#f9d423",
+    headerBackground: "linear-gradient(135deg, #2a0a00 0%, #e65c00 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,220,180,0.88)",
   },
 
   // ── Thanksgiving ───────────────────────────────────────────────────────────
@@ -217,6 +240,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#fff3e0",
     loserTextColor: "#5c2c0a",
     ctaColor: "#5c2c0a",
+    headerBackground: "linear-gradient(135deg, #4a1f06 0%, #8b4513 100%)",
+    headerTextColor: "#fffaf5",
+    headerSubtextColor: "rgba(255,250,245,0.82)",
   },
 
   // ── Valentine's Day ────────────────────────────────────────────────────────
@@ -245,6 +271,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#fce4ec",
     loserTextColor: "#880e4f",
     ctaColor: "#880e4f",
+    headerBackground: "linear-gradient(135deg, #880e4f 0%, #c2185b 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,255,255,0.85)",
   },
 
   // ── New Year ───────────────────────────────────────────────────────────────
@@ -273,6 +302,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#1a1a3e",
     loserTextColor: "#c9a84c",
     ctaColor: "#f5d06e",
+    headerBackground: "linear-gradient(135deg, #07071e 0%, #12124a 100%)",
+    headerTextColor: "#c9a84c",
+    headerSubtextColor: "rgba(201,168,76,0.82)",
   },
 
   // ── 4th of July ────────────────────────────────────────────────────────────
@@ -301,6 +333,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#e8eaf6",
     loserTextColor: "#3c3b6e",
     ctaColor: "#3c3b6e",
+    headerBackground: "linear-gradient(135deg, #8b0000 0%, #b22234 50%, #3c3b6e 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,255,255,0.85)",
   },
 
   // ── St. Patrick's Day ──────────────────────────────────────────────────────
@@ -329,6 +364,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#c8e6c9",
     loserTextColor: "#1b5e20",
     ctaColor: "#003d00",
+    headerBackground: "linear-gradient(135deg, #002800 0%, #005500 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,255,255,0.85)",
   },
 
   // ── Easter ─────────────────────────────────────────────────────────────────
@@ -357,6 +395,9 @@ export const THEMES: Record<string, Theme> = {
     loserBackground: "#f3e5f5",
     loserTextColor: "#6a1b9a",
     ctaColor: "#6a1b9a",
+    headerBackground: "linear-gradient(135deg, #7b1fa2 0%, #ad1457 100%)",
+    headerTextColor: "#ffffff",
+    headerSubtextColor: "rgba(255,255,255,0.85)",
   },
 };
 

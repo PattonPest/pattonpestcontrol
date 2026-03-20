@@ -276,10 +276,12 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
-          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-          <h1 style={s.title}>🎟 Patton Pest Control</h1>
-          <h2 style={s.subtitle}>{theme.name}</h2>
-          <p style={s.tagline}>{theme.tagline}</p>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+            <p style={s.tagline}>{theme.tagline}</p>
+          </div>
           <p style={s.bodyText}>
             Before we get started — do you currently have a recurring service
             with us, or are you a one-time service customer?
@@ -306,10 +308,12 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
-          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-          <h1 style={s.title}>🎟 Patton Pest Control</h1>
-          <h2 style={s.subtitle}>{theme.name}</h2>
-          <p style={s.tagline}>{theme.tagline}</p>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+            <p style={s.tagline}>{theme.tagline}</p>
+          </div>
           <p style={s.bodyText}>
             Enter your phone number or email to get your free scratch-off
             ticket. <strong>One ticket per person per month.</strong>
@@ -344,6 +348,11 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+          </div>
           <p style={{ color: theme.bodyTextColor, fontSize: 18 }}>
             Loading your ticket…
           </p>
@@ -357,6 +366,11 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+          </div>
           <p style={{ color: "#c0392b", fontSize: 16, marginBottom: 16 }}>
             {error}
           </p>
@@ -379,9 +393,11 @@ export default function ScratchPage() {
     return (
       <main style={s.main}>
         <div style={s.card}>
-          <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-          <h1 style={s.title}>🎟 Patton Pest Control</h1>
-          <h2 style={s.subtitle}>{theme.name}</h2>
+          <div style={s.cardHeader}>
+            <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+            <h1 style={s.title}>🎟 Patton Pest Control</h1>
+            <h2 style={s.subtitle}>{theme.name}</h2>
+          </div>
           <p style={{ ...s.bodyText, marginBottom: 16 }}>
             You already played this month — come back next month for another
             chance!
@@ -404,9 +420,11 @@ export default function ScratchPage() {
   return (
     <main style={s.main}>
       <div style={s.card}>
-        <div style={s.bugStrip}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
-        <h1 style={s.title}>🎟 Patton Pest Control</h1>
-        <h2 style={s.subtitle}>{theme.name}</h2>
+        <div style={s.cardHeader}>
+          <div style={s.headerEmoji}>{theme.emoji} {theme.emoji} {theme.emoji}</div>
+          <h1 style={s.title}>🎟 Patton Pest Control</h1>
+          <h2 style={s.subtitle}>{theme.name}</h2>
+        </div>
 
         {!revealed && (
           <p style={s.bodyText}>Scratch the card below to reveal your prize!</p>
@@ -477,25 +495,29 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
       boxShadow: t.cardShadow,
       overflow: "hidden",
     },
-    bugStrip: {
-      fontSize: 18,
-      letterSpacing: 10,
-      padding: "14px 0 12px",
-      background: "rgba(0,0,0,0.06)",
-      borderBottom: "1px solid rgba(0,0,0,0.07)",
-      margin: "0 -28px 16px",
-      opacity: 0.9,
+    cardHeader: {
+      background: t.headerBackground,
+      margin: "0 -28px 20px",
+      padding: "22px 28px 18px",
+      textAlign: "center" as const,
+    },
+    headerEmoji: {
+      fontSize: 22,
+      letterSpacing: 8,
+      marginBottom: 10,
+      opacity: 0.92,
+      color: t.headerSubtextColor,
     },
     title: {
       fontSize: 22,
       fontWeight: 800,
-      color: t.titleColor,
-      margin: "0 0 2px",
+      color: t.headerTextColor,
+      margin: "0 0 4px",
       letterSpacing: "-0.3px",
     },
     subtitle: {
       fontSize: 11,
-      color: t.subtitleColor,
+      color: t.headerSubtextColor,
       marginTop: 0,
       marginBottom: 4,
       fontWeight: 700,
@@ -504,10 +526,10 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
     },
     tagline: {
       fontSize: 13,
-      color: t.subtitleColor,
-      marginBottom: 16,
+      color: t.headerSubtextColor,
+      marginBottom: 0,
       fontStyle: "italic",
-      opacity: 0.85,
+      opacity: 0.9,
     },
     bodyText: {
       color: t.bodyTextColor,
@@ -543,7 +565,7 @@ function buildStyles(t: Theme): Record<string, React.CSSProperties> {
     btnBack: {
       width: "100%",
       background: "transparent",
-      color: t.subtitleColor,
+      color: t.bodyTextColor,
       border: `1.5px solid ${t.inputBorderColor}`,
       borderRadius: 11,
       padding: "10px 0",
